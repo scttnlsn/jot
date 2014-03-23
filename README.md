@@ -6,6 +6,10 @@ A mobile web app for your plain text notes.
 * optional Dropbox syncing
 * iOS standalone capable
 
+---
+
+![](https://dl.dropboxusercontent.com/u/10463543/jot/screenshot.png)
+
 ## Build
 
 Development:
