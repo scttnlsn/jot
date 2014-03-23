@@ -26,7 +26,7 @@
                                    :output-dir "out/prod"
                                    :optimizations :advanced
                                    :pretty-print false
-                                   :preamble ["react/react.min.js" "vendor/dropbox.min.js" "vendor/fastclick.js"]
+                                   :preamble ["react/react.min.js" "vendor/dropbox.min.js" "vendor/fastclick.min.js"]
                                    :externs ["react/externs/react.js" "vendor/dropbox.js" "vendor/fastclick.js"]
                                    :closure-warnings {:externs-validation :off
                                                       :non-standard-jsdoc :off}}}]})
