@@ -565,6 +565,15 @@ header .search .clearable i {
   bottom: 0;
 }
 
+header h1 {
+  max-width: 60%;
+  text-overflow: ellipsis;
+  display: inline-block;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
 /* Buttons */
 
 .btn {
