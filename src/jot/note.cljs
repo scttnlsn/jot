@@ -38,7 +38,9 @@
       (first)))
 
 (defn tags [note]
-  (vec (re-seq #"[#]+[A-Za-z0-9\-_]+" (:text note))))
+  (vec
+    (map #(nth % 1)
+         (re-seq #"[\s]([#]+[A-Za-z0-9\-_]+)" (:text note)))))
 
 (defn matches? [note term]
   (substring? (string/lower-case term) (string/lower-case (:text note))))
