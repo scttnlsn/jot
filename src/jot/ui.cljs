@@ -111,7 +111,7 @@
                             {:init-state {:searches searches}
                              :state {:term term}})})
           (dom/div #js {:className "scroll"}
-            (dom/div #js {:className "wrcursorer"
+            (dom/div #js {:className "wrapper"
                           :ref "scrollable"
                           :onScroll #(put! scrolls (.. % -target -scrollTop))}
               (dom/div nil
