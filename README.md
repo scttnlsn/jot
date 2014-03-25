@@ -6,6 +6,8 @@ A mobile web app for your plain text notes.
 * optional Dropbox syncing
 * iOS standalone capable
 
+Demo: [http://bit.ly/jot-notes](http://bit.ly/jot-notes)
+
 ![](https://dl.dropboxusercontent.com/u/10463543/jot/screenshot.png)
 
 ## Build
