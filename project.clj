@@ -7,7 +7,8 @@
                  [com.facebook/react "0.9.0.1"]
                  [alandipert/storage-atom "1.1.2"]
                  [om "0.5.2"]
-                 [secretary "1.0.2"]]
+                 [secretary "1.0.2"]
+                 [kioo "0.3.0"]]
 
   :plugins [[lein-cljsbuild "1.0.2"]]
   :hooks [leiningen.cljsbuild]
