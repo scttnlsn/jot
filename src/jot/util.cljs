@@ -8,21 +8,13 @@
 (defprotocol IError
   (-error? [this]))
 
+(extend-type default
+  IError
+  (-error? [this] false))
+
 (extend-protocol IError
   js/Error
-  (-error? [this] true)
-  
-  string
-  (-error? [this] false)
-  
-  boolean
-  (-error? [this] false)
-  
-  nil
-  (-error? [this] false)
-  
-  object
-  (-error? [this] false))
+  (-error? [this] true))
 
 (defn throw-error [x]
   (if (-error? x)
