@@ -93,34 +93,29 @@
     om/IInitState
     (init-state [_]
       {:updates (chan)
-       :title (jn/title note)})
+       :text (:text note)})
 
     om/IDidMount
     (did-mount [_]
-      (let [editor (om/get-node owner "editor")
-            {:keys [updates actions]} (om/get-state owner)
+      (let [{:keys [updates actions]} (om/get-state owner)
             debounced (util/debounce updates 500)]
-        (set! (.-innerText editor) (:text note))
         (go
           (dochan [updated-note debounced]
             (>! actions {:type :save
                          :note updated-note})))))
 
     om/IRenderState
-    (render-state [this {:keys [actions updates title]}]
+    (render-state [this {:keys [actions updates text]}]
       (kioo/component "templates/editor.html" [:#editor]
         {[:.left :.btn] (set-attr :onClick #(put! actions {:type :close}))
          [:.right :.btn] (set-attr :onClick #(put! actions {:type :delete
                                                             :note @note}))
-         [:h1] (content title)
-         [:.content] (substitute
-                       (dom/div #js {:className "content"
-                                     :ref "editor"
-                                     :contentEditable "true"
-                                     :onKeyUp #(let [text (.. % -target -innerText)
-                                                     updated-note (assoc @note :text text)]
-                                                 (om/set-state! owner :title (jn/title updated-note))
-                                                 (put! updates updated-note))}))}))))
+         [:h1] (content (jn/title {:text text}))
+         [:.content] (set-attr :value text
+                               :onChange #(let [text (.. % -target -value)
+                                                updated-note (assoc @note :text text)]
+                                            (om/set-state! owner :text text)
+                                            (put! updates updated-note)))}))))
 
 (defn settings [cursor owner]
   (reify
