@@ -65,8 +65,6 @@
         (go
           (let [debounced (util/debounce scrolls 100)]
             (dochan [top debounced]
-              ; FIXME: this causes an undeeded re-render
-              (println "scoll" top)
               (om/update! cursor :scroll top))))))
 
     om/IDidMount
