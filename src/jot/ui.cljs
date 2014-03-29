@@ -63,14 +63,16 @@
           (dochan [term searches]
             (om/update! cursor :term term)))
         (go
-          (dochan [top scrolls]
-            ; FIXME: this causes an undeeded re-render
-            (om/update! cursor :scroll top)))))
+          (let [debounced (util/debounce scrolls 100)]
+            (dochan [top debounced]
+              ; FIXME: this causes an undeeded re-render
+              (println "scoll" top)
+              (om/update! cursor :scroll top))))))
 
     om/IDidMount
     (did-mount [_]
       (let [el (om/get-node owner "scrollable")]
-        #_(set! (.-scrollTop el) (:scroll cursor))))
+        (set! (.-scrollTop el) (:scroll cursor))))
 
     om/IRenderState
     (render-state [this {:keys [actions select-note select-tag searches scrolls]}]
