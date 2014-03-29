@@ -88,14 +88,6 @@
                                  {:init-state {:select-note select-note
                                                :select-tag select-tag}}))})))))
 
-(defn- editable-text [note]
-  (let [lines (string/split-lines (:text note))]
-    (string/join (map #(str % "<br>") lines))))
-
-(defn- parse-text [e]
-  ; TODO: innerText not always supported
-  (.. e -target -innerText))
-
 (defn note-editor [note owner]
   (reify
     om/IInitState
@@ -105,8 +97,10 @@
 
     om/IDidMount
     (did-mount [_]
-      (let [{:keys [updates actions]} (om/get-state owner)
+      (let [editor (om/get-node owner "editor")
+            {:keys [updates actions]} (om/get-state owner)
             debounced (util/debounce updates 500)]
+        (set! (.-innerText editor) (:text note))
         (go
           (dochan [updated-note debounced]
             (>! actions {:type :save
@@ -123,8 +117,7 @@
                        (dom/div #js {:className "content"
                                      :ref "editor"
                                      :contentEditable "true"
-                                     :dangerouslySetInnerHTML #js {:__html (editable-text note)}
-                                     :onKeyUp #(let [text (parse-text %)
+                                     :onKeyUp #(let [text (.. % -target -innerText)
                                                      updated-note (assoc @note :text text)]
                                                  (om/set-state! owner :title (jn/title updated-note))
                                                  (put! updates updated-note))}))}))))
