@@ -8,7 +8,8 @@
                  [om "0.7.3"]
                  [kioo "0.4.0"]
                  [prismatic/om-tools "0.3.2"]
-                 [secretary "1.2.1"]]
+                 [secretary "1.2.1"]
+                 [tailrecursion/cljson "1.0.7"]]
 
   :plugins [[lein-cljsbuild "1.0.4-SNAPSHOT"]]
   :hooks [leiningen.cljsbuild]

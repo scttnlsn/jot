@@ -6,6 +6,7 @@
             [jot.controllers.navigation :as navigation]
             [jot.controllers.actions :as actions]
             [jot.controllers.connectivity :as connectivity]
+            [jot.controllers.storage :as storage]
             [jot.routes :as routes]
             [jot.state :as state]
             [jot.util :as util]))
@@ -41,20 +42,19 @@
         connectivity-ch (chan)
         nav-ch (chan)
         state (atom (-> (state/initial-state)
+                        (assoc :notes (storage/load :notes))
                         (assoc-in [:control :action-ch] action-ch)
                         (assoc-in [:control :connectivity-ch] connectivity-ch)
                         (assoc-in [:control :nav-ch] nav-ch)
                         (assoc-in [:control :history] history)))]
 
-    (let [ch (util/watch state [:notes])]
-      (go
-       (while true
-         (println (<! ch)))))
+    (connectivity/listen connectivity-ch)
+    (storage/listen :notes (util/watch state [:notes]))
 
     (routes/define-routes! nav-ch)
     (routes/start-history! history)
+
     (install-om! state {:action-ch action-ch})
-    (connectivity/listen connectivity-ch)
 
     (go
      (while true
