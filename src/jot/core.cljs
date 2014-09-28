@@ -1,155 +1,66 @@
 (ns jot.core
-  (:require-macros [cljs.core.async.macros :refer [go]]
-                   [jot.macros :refer [dochan]])
-  (:require [cljs.core.async :as async :refer [<! chan timeout]]
-            [alandipert.storage-atom :refer [local-storage]]
+  (:require-macros [cljs.core.async.macros :refer [go alt!]])
+  (:require [cljs.core.async :as async :refer [chan]]
             [om.core :as om :include-macros true]
-            [jot.connectivity :as connectivity]
-            [jot.note :as jn]
-            [jot.session :as session]
-            [jot.sync :as sync]
-            [jot.ui :as ui]
-            [jot.util :as util]
-            [jot.storage :as storage]
-            [jot.routes :as routes]))
+            [jot.components.app :as app]
+            [jot.controllers.navigation :as navigation]
+            [jot.controllers.actions :as actions]
+            [jot.controllers.connectivity :as connectivity]
+            [jot.routes :as routes]
+            [jot.state :as state]
+            [jot.util :as util]))
 
 (enable-console-print!)
 (.attach js/FastClick (.. js/document -body))
+(def log-channels? true)
 
-; app
+(defn action-handler [[name params] state]
+  (if log-channels?
+    (println "action:" name params state))
+  (swap! state (partial actions/action! name params)))
 
-(def note-storage (storage/store :notes {:key :path}))
-(def note-changes (:changes note-storage))
+(defn connectivity-handler [value state]
+  (if log-channels?
+    (println "connectivity:" value state))
+  (swap! state (partial connectivity/connectivity! value)))
 
-(def actions (chan))
+(defn nav-handler [[name params] state]
+  (if log-channels?
+    (println "nav:" name params state))
+  (swap! state (partial navigation/navigate! name params)))
 
-(def app-state (atom {:notes (storage/all note-storage)
-                      :term ""
-                      :scroll 0
-                      :route {:name :note-list}}))
+(defn install-om! [state shared]
+  (om/root app/app
+           state
+           {:target (.getElementById js/document "app")
+            :shared shared}))
 
-(om/root ui/root app-state
-  {:init-state {:actions actions}
-   :target (.getElementById js/document "app")})
+(defn main []
+  (let [history (routes/create-history)
+        action-ch (chan)
+        connectivity-ch (chan)
+        nav-ch (chan)
+        state (atom (-> (state/initial-state)
+                        (assoc-in [:control :action-ch] action-ch)
+                        (assoc-in [:control :connectivity-ch] connectivity-ch)
+                        (assoc-in [:control :nav-ch] nav-ch)
+                        (assoc-in [:control :history] history)))]
 
-; actions
+    (let [ch (util/watch state [:notes])]
+      (go
+       (while true
+         (println (<! ch)))))
 
-(defn update! [note]
-  (let [path (:path note)]
-    (swap! app-state assoc-in [:notes path] (storage/save! note-storage note))))
+    (routes/define-routes! nav-ch)
+    (routes/start-history! history)
+    (install-om! state {:action-ch action-ch})
+    (connectivity/listen connectivity-ch)
 
-(defn delete! [note]
-  (let [path (:path note)]
-    (storage/delete! note-storage note)
-    (swap! app-state update-in [:notes] dissoc path)))
-
-(defmulti perform-action!
-  (fn [action] (:type action)))
-
-(defmethod perform-action! :select [action]
-  (let [note (:note action)
-        path (:path note)]
-    (util/navigate (str "#/notes" path))))
-
-(defmethod perform-action! :create [action]
-  (let [note (jn/init)
-        path (:path note)]
-    (swap! app-state assoc-in [:notes path] (storage/local-create! note-storage note))
-    (util/navigate (str "#/notes" path))))
-
-(defmethod perform-action! :save [action]
-  (let [note (:note action)
-        path (:path note)]
-    (swap! app-state assoc-in [:notes path] (storage/local-save! note-storage note))))
-
-(defmethod perform-action! :delete [action]
-  (let [note (:note action)
-        path (:path note)]
-    (if (js/confirm "Are you sure?")
-      (do
-        (swap! app-state #(update-in % [:notes] dissoc path))
-        (storage/local-delete! note-storage note)
-        (util/navigate "#/")))))
-
-(defmethod perform-action! :close [action]
-  (util/navigate "#/"))
-
-(defmethod perform-action! :settings [action]
-  (util/navigate "#/settings"))
-
-(defmethod perform-action! :toggle-connection [action]
-  (if (:connected @app-state)
-    (do
-      (swap! app-state assoc :connected false)
-      (session/end))
-    (do
-      (swap! app-state assoc :connected true)
-      (session/connect))))
-
-(go
-  (dochan [action actions]
-    (perform-action! (assoc action :app-state app-state))))
-
-; sync
-
-(defn- change->note [change]
-  (-> change
-      (select-keys [:path :timestamp])
-      (assoc :text (:data change))))
-
-(defn- note->change [note]
-  (-> note
-      (select-keys [:path :timestamp :volatile :deleted])
-      (assoc :data (:text note))))
-
-(def metadata (local-storage (atom {}) :metadata))
-
-(def stopper (atom nil))
-
-(defn start-sync []
-  (let [cursor (:cursor @metadata)
-        [changes stop] (sync/start session/dropbox-client cursor)]
-    (reset! stopper stop)
     (go
-      (dochan [note note-changes]
-        (let [push-ch (sync/push session/dropbox-client (note->change note))
-              change (<! push-ch)]
-          (if (:deleted change)
-            (delete! (change->note change))
-            (update! (change->note change))))))
-    (go
-      (dochan [change changes]
-        (if (:deleted change)
-          (delete! (change->note change))
-          (update! (change->note change)))
-        (swap! metadata assoc :cursor (:cursor change))))))
+     (while true
+       (alt!
+        action-ch ([value] (action-handler value state))
+        connectivity-ch ([value] (connectivity-handler value state))
+        nav-ch ([value] (nav-handler value state)))))))
 
-(defn stop-sync []
-  (if @stopper
-    (@stopper)))
-
-(add-watch connectivity/state :core
-  (fn [_ _ _ {:keys [online]}]
-    (if online
-      (do
-        (go
-          (<! (timeout 1000))
-          (session/start)))
-      (stop-sync))))
-
-(add-watch session/state :core
-  (fn [_ _ _ {:keys [active error]}]
-    (if error
-      (do
-        (stop-sync)
-        (.log js/console error))
-      (if active
-        (start-sync)
-        (stop-sync)))))
-
-(if (connectivity/online?)
-  (session/start))
-
-(swap! app-state assoc :connected (session/active?))
-
-(routes/define-routes! app-state)
+(main)

@@ -36,11 +36,8 @@
   (let [[ch _] (apply async-result-chan (cons f args))]
     ch))
 
-(defn navigate [url]
-  (set! (.. js/window -location) url))
-
-(defn navigate-back []
-  (.back (.. js/window -history)))
+(defn redirect [history path]
+  (.replaceToken history (subs path 1)))
 
 (defn debounce [in ms]
   (let [out (chan)]
@@ -61,3 +58,12 @@
                        [(.toString  (bit-or 0x8 (bit-and 0x3 (rand-int 15))) 16)]
                        (take 3 (drop 15 r)) ["-"]
                        (take 12 (drop 18 r))))))
+
+(defn watch [ref path]
+  (let [ch (chan)]
+    (add-watch ref (gensym) (fn [_ _ old new]
+                         (let [old-value (get-in old path)
+                               new-value (get-in new path)]
+                           (if (not (identical? old-value new-value))
+                             (put! ch [old-value new-value])))))
+    ch))

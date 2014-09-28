@@ -1,16 +1,16 @@
 (defproject jot "0.1.0-SNAPSHOT"
   :url "https://github.com/scttnlsn/jot"
 
-  :dependencies [[org.clojure/clojure "1.5.1"]
-                 [org.clojure/clojurescript "0.0-2173"]
-                 [org.clojure/core.async "0.1.267.0-0d7780-alpha"]
-                 [com.facebook/react "0.9.0.1"]
-                 [alandipert/storage-atom "1.1.2"]
-                 [om "0.5.2"]
-                 [secretary "1.0.2"]
-                 [kioo "0.3.0"]]
+  :dependencies [[org.clojure/clojure "1.6.0"]
+                 [org.clojure/clojurescript "0.0-2311"]
+                 [org.clojure/core.async "0.1.338.0-5c5012-alpha"]
+                 [com.facebook/react "0.11.2"]
+                 [om "0.7.3"]
+                 [kioo "0.4.0"]
+                 [prismatic/om-tools "0.3.2"]
+                 [secretary "1.2.1"]]
 
-  :plugins [[lein-cljsbuild "1.0.2"]]
+  :plugins [[lein-cljsbuild "1.0.4-SNAPSHOT"]]
   :hooks [leiningen.cljsbuild]
 
   :source-paths ["src"]

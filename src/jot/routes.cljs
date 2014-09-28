@@ -1,27 +1,24 @@
 (ns jot.routes
-  (:require [secretary.core :as secretary :include-macros true :refer [defroute]])
+  (:require [cljs.core.async :refer [put!]]
+            [secretary.core :as secretary :include-macros true :refer [defroute]])
   (:import goog.History
            goog.history.EventType))
 
 (secretary/set-config! :prefix "#")
 
-(def listen (.-listen goog.events))
-(def navigate-event (.-NAVIGATE goog.events.EventType))
+(defn define-routes! [nav-ch]
+  (defroute notes-path "/" {}
+    (put! nav-ch [:notes {}]))
 
-(defn define-routes! [app-state]
-  (defroute "/" {}
-    (swap! app-state assoc :route {:name :note-list}))
+  (defroute note-path "/notes/:id" {id :id}
+    (put! nav-ch [:note {:id id}]))
 
-  (defroute "/notes/:id" {id :id}
-    (let [path (str "/" id)
-          notes (:notes @app-state)
-          note (get notes path)]
-      (swap! app-state assoc :route {:name :note-edit
-                                     :note note})))
-  
-  (defroute "/settings" {}
-    (swap! app-state assoc :route {:name :settings}))
-  
-  (let [h (History.)]
-    (goog.events/listen h EventType/NAVIGATE #(secretary/dispatch! (.-token %)))
-    (doto h (.setEnabled true))))
+  (defroute settings-path "/settings" {}
+    (put! nav-ch [:settings {}])))
+
+(defn create-history []
+  (History.))
+
+(defn start-history! [history]
+  (goog.events/listen history EventType/NAVIGATE #(secretary/dispatch! (.-token %)))
+  (.setEnabled history true))

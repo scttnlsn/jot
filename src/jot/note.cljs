@@ -1,4 +1,4 @@
-(ns jot.note
+7(ns jot.note
   (:require [clojure.string :as string]
             [jot.util :as util]))
 
@@ -14,9 +14,11 @@
   (vec (filter present? (string/split-lines (:text note)))))
 
 (defn init []
-  {:timestamp (js/Date.)
-   :path (str "/" (util/uuid))
-   :text ""})
+  (let [id (util/uuid)]
+    {:id id
+     :path (str "/" id)
+     :timestamp (js/Date.)
+     :text ""}))
 
 (defn title [note]
   (let [lines (parse-lines note)]
