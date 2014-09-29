@@ -6,7 +6,7 @@
 
 (defn listen [conn-ch]
   (let [cb (fn []
-             (put! conn-ch (online?)))]
+             (put! conn-ch {:online (online?)}))]
     (.addEventListener js/window "online" cb)
     (.addEventListener js/window "offline" cb)
     (cb)))

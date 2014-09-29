@@ -7,28 +7,42 @@
             [jot.controllers.actions :as actions]
             [jot.controllers.connectivity :as connectivity]
             [jot.controllers.storage :as storage]
+            [jot.controllers.sync :as sync]
+            [jot.dropbox :as dropbox]
             [jot.routes :as routes]
             [jot.state :as state]
             [jot.util :as util]))
 
 (enable-console-print!)
 (.attach js/FastClick (.. js/document -body))
+
 (def log-channels? true)
 
-(defn action-handler [[name params] state]
+(defn- channel-log [title name params state]
   (if log-channels?
-    (println "action:" name params state))
+    (do
+      (.log js/console
+            (str "--- %c " title ":")
+            "font-weight: bold"
+            (str name))
+      (.log js/console (clj->js params))
+      (.log js/console (clj->js @state)))))
+
+(defn action-handler [[name params] state]
+  (channel-log "action" name params state)
   (swap! state (partial actions/action! name params)))
 
-(defn connectivity-handler [value state]
-  (if log-channels?
-    (println "connectivity:" value state))
-  (swap! state (partial connectivity/connectivity! value)))
+(defn connectivity-handler [params state]
+  (channel-log "connectivity" nil params state)
+  (swap! state (partial connectivity/connectivity! params)))
 
 (defn nav-handler [[name params] state]
-  (if log-channels?
-    (println "nav:" name params state))
+  (channel-log "nav" name params state)
   (swap! state (partial navigation/navigate! name params)))
+
+(defn sync-handler [[name params] state]
+  (channel-log "sync" name params state)
+  (swap! state (partial sync/sync! name params)))
 
 (defn install-om! [state shared]
   (om/root app/app
@@ -41,16 +55,22 @@
         action-ch (chan)
         connectivity-ch (chan)
         nav-ch (chan)
+        sync-ch (chan)
         state (atom (-> (state/initial-state)
+                        (assoc :route (routes/default-route))
                         (assoc :notes (storage/load :notes))
-                        (assoc-in [:control :action-ch] action-ch)
-                        (assoc-in [:control :connectivity-ch] connectivity-ch)
-                        (assoc-in [:control :nav-ch] nav-ch)
-                        (assoc-in [:control :history] history)))]
+                        (assoc :cursor (storage/load :cursor))
+                        (assoc :control {:action-ch action-ch
+                                         :connectivity-ch connectivity-ch
+                                         :nav-ch nav-ch
+                                         :sync-ch sync-ch
+                                         :history history})))]
 
     (connectivity/listen connectivity-ch)
     (storage/listen :notes (util/watch state [:notes]))
-
+    (storage/listen :cursor (util/watch state [:cursor]))
+    (sync/listen (util/watch state [:notes]) sync-ch)
+    (sync/restore sync-ch)
     (routes/define-routes! nav-ch)
     (routes/start-history! history)
 
@@ -61,6 +81,7 @@
        (alt!
         action-ch ([value] (action-handler value state))
         connectivity-ch ([value] (connectivity-handler value state))
-        nav-ch ([value] (nav-handler value state)))))))
+        nav-ch ([value] (nav-handler value state))
+        sync-ch ([value] (sync-handler value state)))))))
 
 (main)

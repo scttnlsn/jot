@@ -1,5 +1,6 @@
 (ns jot.controllers.actions
-  (:require [jot.note :as note]
+  (:require [cljs.core.async :refer [put!]]
+            [jot.note :as note]
             [jot.routes :as routes]
             [jot.util :as util]))
 
@@ -49,6 +50,14 @@
   [name {:keys [offset]} state]
   (-> state
       (assoc :scroll offset)))
+
+(defmethod action! :toggle-sync
+  [name params state]
+  (let [sync-ch (get-in state [:control :sync-ch])]
+    (if (:syncing state)
+      (put! sync-ch [:stop params])
+      (put! sync-ch [:start params])))
+  state)
 
 (defmethod action! :default
   [name params state]

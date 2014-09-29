@@ -27,7 +27,7 @@
              (go
                (if err
                  (>! ch err)
-                 (>! ch results))
+                 (>! ch (or results [])))
                (close! ch)))
         result (apply f (concat args [cb]))]
     [ch result]))
@@ -67,3 +67,14 @@
                            (if (not (identical? old-value new-value))
                              (put! ch [old-value new-value])))))
     ch))
+
+(defn dissoc-in
+  [m [k & ks :as keys]]
+  (if ks
+    (if-let [nextmap (get m k)]
+      (let [newmap (dissoc-in nextmap ks)]
+        (if (seq newmap)
+          (assoc m k newmap)
+          (dissoc m k)))
+      m)
+    (dissoc m k)))

@@ -7,15 +7,19 @@
 (extend-protocol util/IError
   AuthError
   (-error? [this] true)
-  
+
   ApiError
   (-error? [this] true))
 
 (defn- parse-change [change]
-  (let [result {:path (.-path change) :deleted false :timestamp nil}]
+  (let [result {:path (.-path change)
+                :deleted false
+                :timestamp nil}]
     (if (.-wasRemoved change)
       (assoc result :deleted true)
-      (assoc result :timestamp (-> change .-stat .-clientModifiedAt)))))
+      (assoc result :timestamp (-> change
+                                   .-stat
+                                   .-clientModifiedAt)))))
 
 (defn- parse-pull-result [result]
   {:changes (map parse-change (js->clj (.-changes result)))
@@ -26,45 +30,42 @@
   {:has-changes (.-hasChanges result)
    :retry-timeout (* 1000 (.-retryAfter result))})
 
-(defn client [key]
-  (let [Client (.-Client js/Dropbox)]
-    (Client. #js{:key key})))
-
-(defn pull [client cursor cb]
-  (.pullChanges client cursor (fn [err result]
+(defn- wrap-callback [cb f]
+  (fn [err result]
     (if err
       (cb err)
-      (cb nil (parse-pull-result result))))))
-
-(defn poll [client cursor cb]
-  (.pollForChanges client cursor (fn [err result]
-    (if err
-      (cb err)
-      (cb nil (parse-poll-result result))))))
-
-(defn read [client path cb]
-  (.readFile client path (fn [err data]
-    (if err
-      (cb err)
-      (cb nil {:data data})))))
-
-(defn write [client path data cb]
-  (.writeFile client path data (fn [err]
-    (if err
-      (cb err)
-      (cb nil true)))))
-
-(defn delete [client path cb]
-  (.remove client path (fn [err]
-    (if err
-      (cb err)
-      (cb nil true)))))
+      (cb nil (f result)))))
 
 (defn authenticated? [client]
   (.isAuthenticated client))
 
-(defn authenticate [client options cb]
-  (.authenticate client options cb))
+(defn create-client [key]
+  (let [Client (.-Client js/Dropbox)]
+    (Client. #js {:key key})))
 
-(defn logout [client cb]
-  (.signOut client cb))
+(defn pull [client cursor]
+  (util/async-chan
+   #(.pullChanges client cursor (wrap-callback % parse-pull-result))))
+
+(defn poll [client cursor]
+  (util/async-result-chan
+   #(.pollForChanges client cursor (wrap-callback % parse-poll-result))))
+
+(defn read [client path]
+  (util/async-chan
+   #(.readFile client path (wrap-callback % (fn [data] {:data data})))))
+
+(defn write [client path data]
+  (util/async-chan #(.writeFile client path data %)))
+
+(defn delete [client path]
+  (util/async-chan
+   #(.remove client path %)))
+
+(defn authenticate [client interactive]
+  (util/async-chan
+   #(.authenticate client #js {:interactive interactive} %)))
+
+(defn logout [client]
+  (util/async-chan
+   #(.signOut client %)))

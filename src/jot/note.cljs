@@ -16,7 +16,6 @@
 (defn init []
   (let [id (util/uuid)]
     {:id id
-     :path (str "/" id)
      :timestamp (js/Date.)
      :text ""}))
 

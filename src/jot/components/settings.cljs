@@ -12,8 +12,8 @@
     (let [action-ch (om/get-shared owner :action-ch)]
       (kioo/component "templates/settings.html" [:#settings]
         {[:.status] (content
-                     (str "Dropbox syncing is " (if (:connected cursor) "on" "off") "."))
+                     (str "Dropbox syncing is " (if (:syncing cursor) "on" "off") "."))
          [:button] (do->
                     (set-attr :onClick #(put! action-ch [:toggle-sync {}]))
                     (content
-                     (if (:connected cursor) "Disconnect" "Connect")))}))))
+                     (if (:syncing cursor) "Disconnect" "Connect")))}))))

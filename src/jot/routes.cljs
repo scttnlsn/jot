@@ -6,6 +6,9 @@
 
 (secretary/set-config! :prefix "#")
 
+(defn default-route []
+  [:notes {}])
+
 (defn define-routes! [nav-ch]
   (defroute notes-path "/" {}
     (put! nav-ch [:notes {}]))
