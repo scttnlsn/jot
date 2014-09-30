@@ -53,7 +53,7 @@
 (defn main []
   (let [history (routes/create-history)
         action-ch (chan)
-        connectivity-ch (chan)
+        connectivity-ch (connectivity/channel)
         nav-ch (chan)
         sync-ch (chan)
         state (atom (-> (state/initial-state)
@@ -66,7 +66,6 @@
                                          :sync-ch sync-ch
                                          :history history})))]
 
-    (connectivity/listen connectivity-ch)
     (storage/listen :notes (util/watch state [:notes]))
     (storage/listen :cursor (util/watch state [:cursor]))
     (sync/listen (util/watch state [:notes]) sync-ch)
