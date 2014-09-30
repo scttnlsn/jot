@@ -1,9 +1,8 @@
 (ns jot.util
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]
                    [jot.macros :refer [<?]])
-  (:require [cljs.core.async :as async :refer [alts! >! chan close! put! timeout]]
-            [goog.Uri])
-  (:import [goog.Uri]))
+  (:require [cljs.core.async :as async :refer [alts! >! chan close! put! timeout]])
+  (:import goog.Uri))
 
 (defprotocol IError
   (-error? [this]))
