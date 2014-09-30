@@ -192,7 +192,7 @@
     (-> state
         (assoc :notes (-> (:notes state)
                           (merge (hash-by-id updated))
-                          (dissoc (vec (map :id deleted)))))
+                          (#(apply dissoc % (vec (map :id deleted))))))
         (assoc :cursor cursor))))
 
 (defmethod sync! [:read :error]

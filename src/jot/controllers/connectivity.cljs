@@ -16,6 +16,7 @@
   (let [sync-ch (get-in state [:control :sync-ch])]
     (if online
       (go
-       (<! (timeout 1000))
-       (put! sync-ch [:push-all-dirty {}]))))
+       (<! (timeout 5000))
+       (put! sync-ch [:restore {}]))
+      (.stop js/window)))
   (assoc state :online online))
