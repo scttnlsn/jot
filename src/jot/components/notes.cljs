@@ -49,8 +49,7 @@
   (render-state [_ {:keys [scroll-ch]}]
     (let [action-ch (om/get-shared owner :action-ch)
           term (:search cursor)
-          notes (-> cursor
-                    (:notes)
+          notes (-> (:notes cursor)
                     (vals)
                     (note/filtered)
                     (note/matching term)
@@ -63,12 +62,17 @@
          [:ul.list] (content (om/build-all note-item notes))}))))
 
 (defcomponent note-editor [cursor owner]
-  (render [_]
+  (init-state [_]
+    {:text (:text cursor)})
+
+  (render-state [_ {:keys [text]}]
     (let [action-ch (om/get-shared owner :action-ch)]
       (kioo/component "templates/editor.html" [:#editor]
         {[:.right :.btn] (set-attr :onClick #(if (js/confirm "Are you sure?")
                                                (put! action-ch [:delete-note {:note @cursor}])))
-         [:h1] (content (note/title cursor))
-         [:.content] (set-attr :value (:text cursor)
-                               :onChange #(put! action-ch [:update-note {:note @cursor
-                                                                         :text (.. % -target -value)}]))}))))
+         [:h1] (content (note/title {:text text}))
+         [:.content] (set-attr :value text
+                               :onChange #(let [new-text (.. % -target -value)]
+                                            (om/set-state! owner :text new-text)
+                                            (put! action-ch [:update-note {:note @cursor
+                                                                           :text new-text}])))}))))

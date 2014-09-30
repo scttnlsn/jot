@@ -18,7 +18,8 @@
 (defn- change->data [change]
   {:id (subs (:path change) 1)
    :text (:data change)
-   :timestamp (:timestamp change)})
+   :timestamp (:timestamp change)
+   :deleted (:deleted change)})
 
 (defn- dispatch [name ch state context]
   (go
@@ -128,7 +129,7 @@
   (let [sync-ch (get-in state [:control :sync-ch])
         cursor (:cursor state)]
     (if cursor
-      (dispatch :poll (dropbox/poll client cursor) state {})
+      (dispatch :poll (dropbox/poll client cursor) state {:cursor cursor})
       (put! sync-ch [[:poll :success] {:has-changes true
                                        :retry-timeout 0
                                        :cursor nil}])) ; FIXME should cursor be included here?
