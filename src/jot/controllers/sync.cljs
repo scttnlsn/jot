@@ -132,7 +132,7 @@
       (dispatch :poll (dropbox/poll client cursor) state {:cursor cursor})
       (put! sync-ch [[:poll :success] {:has-changes true
                                        :retry-timeout 0
-                                       :cursor nil}])) ; FIXME should cursor be included here?
+                                       :cursor nil}]))
     state))
 
 (defmethod sync! [:poll :success]
@@ -186,7 +186,8 @@
   [name {:keys [changes cursor]} state]
   (let [sync-ch (get-in state [:control :sync-ch])
         items (map change->data changes)
-        [updated deleted] (partition-by :deleted items)]
+        deleted (filter :deleted items)
+        updated (remove :deleted items)]
     (put! sync-ch [:poll {}])
     (-> state
         (assoc :notes (-> (:notes state)
