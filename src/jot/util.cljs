@@ -1,9 +1,9 @@
 (ns jot.util
-  (:require-macros
-    [cljs.core.async.macros :refer [go go-loop]]
-    [jot.macros :refer [<?]])
-  (:require
-    [cljs.core.async :as async :refer [alts! >! chan close! put! timeout]]))
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]
+                   [jot.macros :refer [<?]])
+  (:require [cljs.core.async :as async :refer [alts! >! chan close! put! timeout]]
+            [goog.Uri])
+  (:import [goog.Uri]))
 
 (defprotocol IError
   (-error? [this]))
@@ -21,33 +21,26 @@
     (throw x)
     x))
 
-(defn async-result-chan [f & args]
+(defn async-chan [f & args]
   (let [ch (chan)
         cb (fn [err res]
              (go
-               (if err
-                 (>! ch err)
-                 (>! ch res))
-               (close! ch)))
-        result (apply f (concat args [cb]))]
-    [ch result]))
-
-(defn async-chan [f & args]
-  (let [[ch _] (apply async-result-chan (cons f args))]
+              (if err
+                (>! ch err)
+                (>! ch res))
+              (close! ch)))]
+    (apply f (concat args [cb]))
     ch))
-
-(defn redirect [history path]
-  (.replaceToken history (subs path 1)))
 
 (defn debounce [in ms]
   (let [out (chan)]
     (go-loop [last-val nil]
-      (let [val (if (nil? last-val) (<! in) last-val)
-            timer (timeout ms)
-            [new-val ch] (alts! [in timer])]
-        (condp = ch
-          timer (do (>! out val) (recur nil))
-          in (recur new-val))))
+     (let [val (if (nil? last-val) (<! in) last-val)
+           timer (timeout ms)
+           [new-val ch] (alts! [in timer])]
+       (condp = ch
+         timer (do (>! out val) (recur nil))
+         in (recur new-val))))
     out))
 
 (defn uuid []
@@ -62,10 +55,10 @@
 (defn watch [ref path]
   (let [ch (chan)]
     (add-watch ref (gensym) (fn [_ _ old new]
-                         (let [old-value (get-in old path)
-                               new-value (get-in new path)]
-                           (if (not (identical? old-value new-value))
-                             (put! ch [old-value new-value])))))
+                              (let [old-value (get-in old path)
+                                    new-value (get-in new path)]
+                                (if (not (identical? old-value new-value))
+                                  (put! ch [old-value new-value])))))
     ch))
 
 (defn dissoc-in
@@ -78,3 +71,17 @@
           (dissoc m k)))
       m)
     (dissoc m k)))
+
+(def parsed-uri
+  (goog.Uri. (-> (.-location js/window) (.-href))))
+
+(defn parse-bool [string]
+  (condp = string
+    "true" true
+    "false" false
+    nil))
+
+(def query-string-options
+  {:log? (parse-bool (.getParameterValue parsed-uri "log"))})
+
+(def logging-enabled? (:log? query-string-options))

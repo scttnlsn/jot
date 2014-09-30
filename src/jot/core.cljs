@@ -16,10 +16,8 @@
 (enable-console-print!)
 (.attach js/FastClick (.. js/document -body))
 
-(def log-channels? true)
-
 (defn- channel-log [title name params state]
-  (if log-channels?
+  (if util/logging-enabled?
     (do
       (.log js/console
             (str "--- %c " title ":")

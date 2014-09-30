@@ -1,8 +1,7 @@
 (ns jot.controllers.actions
   (:require [cljs.core.async :refer [put!]]
             [jot.note :as note]
-            [jot.routes :as routes]
-            [jot.util :as util]))
+            [jot.routes :as routes]))
 
 (defmulti action!
   (fn [name params state] name))
@@ -20,7 +19,7 @@
   (let [history (get-in state [:control :history])
         new-note (note/init)
         id (:id new-note)]
-    (util/redirect history (routes/note-path {:id id}))
+    (routes/redirect history (routes/note-path {:id id}))
     (-> state
         (assoc-in [:notes id] new-note)
         (assoc-in [:notes id :dirty] true)
@@ -37,7 +36,7 @@
   [name {:keys [note]} {:keys [notes] :as state}]
   (let [history (get-in state [:control :history])
         id (:id note)]
-    (util/redirect history (routes/notes-path))
+    (routes/redirect history (routes/notes-path))
     (-> state
         (assoc-in [:notes id :deleted] true)
         (assoc-in [:notes id :dirty] true))))
@@ -45,7 +44,7 @@
 (defmethod action! :select-note
   [name {:keys [note]} state]
   (let [history (get-in state [:control :history])]
-    (util/redirect history (routes/note-path {:id (:id note)}))
+    (routes/redirect history (routes/note-path {:id (:id note)}))
     state))
 
 (defmethod action! :scroll

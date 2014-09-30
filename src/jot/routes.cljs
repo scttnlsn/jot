@@ -9,6 +9,9 @@
 (defn default-route []
   [:notes {}])
 
+(defn redirect [history path]
+  (.replaceToken history (subs path 1)))
+
 (defn define-routes! [nav-ch]
   (defroute notes-path "/" {}
     (put! nav-ch [:notes {}]))

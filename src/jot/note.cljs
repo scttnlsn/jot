@@ -1,4 +1,4 @@
-7(ns jot.note
+(ns jot.note
   (:require [clojure.string :as string]
             [jot.util :as util]))
 
@@ -40,8 +40,8 @@
 
 (defn tags [note]
   (vec
-    (map #(nth % 1)
-         (re-seq #"[\s]([#]+[A-Za-z0-9\-_]+)" (:text note)))))
+   (map #(nth % 1)
+        (re-seq #"[\s]([#]+[A-Za-z0-9\-_]+)" (:text note)))))
 
 (defn matches? [note term]
   (substring? (string/lower-case term) (string/lower-case (:text note))))
@@ -54,6 +54,6 @@
 
 (defn sorted [notes]
   (vec
-    (sort
-      #(compare (:timestamp %2) (:timestamp %1))
-      notes)))
+   (sort
+    #(compare (:timestamp %2) (:timestamp %1))
+    notes)))

@@ -21,6 +21,22 @@
    :timestamp (:timestamp change)
    :deleted (:deleted change)})
 
+(defn- hash-by-id [items]
+  (into {} (map (fn [{:keys [id] :as item}]
+                  [id item]) items)))
+
+(defn- read-changes [changes]
+  (let [ch (chan)]
+    (go-catch
+     (doseq [{:keys [path deleted] :as change} changes]
+       (if deleted
+         (>! ch change)
+         (let [res (<? (dropbox/read client path))]
+           (>! ch (merge change res)))))
+     (close! ch))
+    (async/pipe (async/reduce conj [] ch)
+                (chan 1 (map (fn [changes] {:changes changes}))))))
+
 (defn- dispatch [name ch state context]
   (go
    (let [sync-ch (get-in state [:control :sync-ch])]
@@ -30,6 +46,17 @@
        (catch js/Object err
          (>! sync-ch [[name :error] err])))))
   state)
+
+(defn restore [sync-ch]
+  (put! sync-ch [:restore {}]))
+
+(defn listen [src-ch sync-ch]
+  (let [debounced-ch (util/debounce src-ch 500)]
+    (go
+     (while true
+       (let [[_ items] (<! debounced-ch)]
+         (doseq [item (dirty (vals items))]
+           (put! sync-ch [:push item])))))))
 
 (defmulti sync!
   (fn [name params state] name))
@@ -153,18 +180,6 @@
   [name {:keys [cursor]} state]
   (dispatch :pull (dropbox/pull client cursor) state {}))
 
-(defn- read-changes [changes]
-  (let [ch (chan)]
-    (go-catch
-     (doseq [{:keys [path deleted] :as change} changes]
-       (if deleted
-         (>! ch change)
-         (let [res (<? (dropbox/read client path))]
-           (>! ch (merge change res)))))
-     (close! ch))
-    (async/pipe (async/reduce conj [] ch)
-                (chan 1 (map (fn [changes] {:changes changes}))))))
-
 (defmethod sync! [:pull :success]
   [name {:keys [changes cursor pull-again]} state]
   (let [sync-ch (get-in state [:control :sync-ch])]
@@ -177,10 +192,6 @@
 (defmethod sync! :read
   [name {:keys [changes cursor]} state]
   (dispatch :read (read-changes changes) state {:cursor cursor}))
-
-(defn- hash-by-id [items]
-  (into {} (map (fn [{:keys [id] :as item}]
-                  [id item]) items)))
 
 (defmethod sync! [:read :success]
   [name {:keys [changes cursor]} state]
@@ -198,14 +209,3 @@
 (defmethod sync! [:read :error]
   [name params state]
   state)
-
-(defn restore [sync-ch]
-  (put! sync-ch [:restore {}]))
-
-(defn listen [src-ch sync-ch]
-  (let [debounced-ch (util/debounce src-ch 500)]
-    (go
-     (while true
-       (let [[_ items] (<! debounced-ch)]
-         (doseq [item (dirty (vals items))]
-           (put! sync-ch [:push item])))))))
