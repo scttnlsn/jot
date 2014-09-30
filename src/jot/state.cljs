@@ -7,6 +7,7 @@
 
    :online false
    :syncing false
+   :cursor nil
 
    :control {:action-ch nil
              :connectivity-ch nil

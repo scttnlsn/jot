@@ -30,6 +30,18 @@
   {:has-changes (.-hasChanges result)
    :retry-timeout (* 1000 (.-retryAfter result))})
 
+(defn- parse-write-result [result]
+  {})
+
+(defn- parse-delete-result [result]
+  {})
+
+(defn- parse-authenticate-result [result]
+  {})
+
+(defn- parse-logout-result [result]
+  {})
+
 (defn- wrap-callback [cb f]
   (fn [err result]
     (if err
@@ -48,7 +60,7 @@
    #(.pullChanges client cursor (wrap-callback % parse-pull-result))))
 
 (defn poll [client cursor]
-  (util/async-result-chan
+  (util/async-chan
    #(.pollForChanges client cursor (wrap-callback % parse-poll-result))))
 
 (defn read [client path]
@@ -56,16 +68,19 @@
    #(.readFile client path (wrap-callback % (fn [data] {:data data})))))
 
 (defn write [client path data]
-  (util/async-chan #(.writeFile client path data %)))
+  (util/async-chan
+   #(.writeFile client path data (wrap-callback % parse-write-result))))
 
 (defn delete [client path]
   (util/async-chan
-   #(.remove client path %)))
+   #(.remove client path (wrap-callback % parse-delete-result))))
 
 (defn authenticate [client interactive]
   (util/async-chan
-   #(.authenticate client #js {:interactive interactive} %)))
+   #(.authenticate client
+                   #js {:interactive interactive}
+                   (wrap-callback % parse-authenticate-result))))
 
 (defn logout [client]
   (util/async-chan
-   #(.signOut client %)))
+   #(.signOut client (wrap-callback % parse-logout-result))))

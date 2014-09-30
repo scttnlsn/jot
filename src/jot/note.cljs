@@ -49,6 +49,9 @@
 (defn matching [notes term]
   (filter #(matches? % term) notes))
 
+(defn filtered [notes]
+  (filter (fn [note] (not (:deleted note))) notes))
+
 (defn sorted [notes]
   (vec
     (sort

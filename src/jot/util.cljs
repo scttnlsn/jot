@@ -23,11 +23,11 @@
 
 (defn async-result-chan [f & args]
   (let [ch (chan)
-        cb (fn [err & results]
+        cb (fn [err res]
              (go
                (if err
                  (>! ch err)
-                 (>! ch (or results [])))
+                 (>! ch res))
                (close! ch)))
         result (apply f (concat args [cb]))]
     [ch result]))

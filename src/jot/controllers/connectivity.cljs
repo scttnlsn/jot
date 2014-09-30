@@ -1,5 +1,6 @@
 (ns jot.controllers.connectivity
-  (:require [cljs.core.async :as async :refer [chan put!]]))
+  (:require-macros [cljs.core.async.macros :refer [go]])
+  (:require [cljs.core.async :as async :refer [>! chan put! timeout]]))
 
 (defn online? []
   (.-onLine js/navigator))
@@ -11,5 +12,10 @@
     (.addEventListener js/window "offline" cb)
     (cb)))
 
-(defn connectivity! [params state]
-  (assoc state :online (:online params)))
+(defn connectivity! [{:keys [online]} state]
+  (let [sync-ch (get-in state [:control :sync-ch])]
+    (if online
+      (go
+       (<! (timeout 1000))
+       (put! sync-ch [:push-all-dirty {}]))))
+  (assoc state :online online))

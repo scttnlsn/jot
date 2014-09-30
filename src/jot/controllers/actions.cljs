@@ -35,10 +35,12 @@
 
 (defmethod action! :delete-note
   [name {:keys [note]} {:keys [notes] :as state}]
-  (let [history (get-in state [:control :history])]
+  (let [history (get-in state [:control :history])
+        id (:id note)]
     (util/redirect history (routes/notes-path))
     (-> state
-        (assoc :notes (dissoc notes (:id note))))))
+        (assoc-in [:notes id :deleted] true)
+        (assoc-in [:notes id :dirty] true))))
 
 (defmethod action! :select-note
   [name {:keys [note]} state]

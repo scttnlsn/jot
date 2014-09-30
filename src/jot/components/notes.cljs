@@ -49,7 +49,12 @@
   (render-state [_ {:keys [scroll-ch]}]
     (let [action-ch (om/get-shared owner :action-ch)
           term (:search cursor)
-          notes (note/matching (note/sorted (vals (:notes cursor))) term)]
+          notes (-> cursor
+                    (:notes)
+                    (vals)
+                    (note/filtered)
+                    (note/matching term)
+                    (note/sorted))]
       (kioo/component "templates/list.html" [:#list]
         {[:.right :.btn] (set-attr :onClick #(put! action-ch [:create-note {}]))
          [:.search] (substitute (om/build search/search cursor))
