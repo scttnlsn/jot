@@ -9,10 +9,13 @@
                  [kioo "0.4.0"]
                  [prismatic/om-tools "0.3.2"]
                  [secretary "1.2.1"]
-                 [tailrecursion/cljson "1.0.7"]]
+                 [tailrecursion/cljson "1.0.7"]
+                 [com.cemerick/piggieback "0.1.3"]
+                 [weasel "0.4.0-SNAPSHOT"]]
 
   :plugins [[lein-cljsbuild "1.0.4-SNAPSHOT"]]
-  :hooks [leiningen.cljsbuild]
+
+  :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
 
   :source-paths ["src"]
 

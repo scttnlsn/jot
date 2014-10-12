@@ -2,6 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go alt!]])
   (:require [cljs.core.async :as async :refer [chan]]
             [om.core :as om :include-macros true]
+            [weasel.repl :as ws-repl]
             [jot.components.app :as app]
             [jot.controllers.navigation :as navigation]
             [jot.controllers.actions :as actions]
@@ -82,3 +83,4 @@
         sync-ch ([value] (sync-handler value state)))))))
 
 (main)
+(ws-repl/connect "ws://localhost:9001" :verbose true)
