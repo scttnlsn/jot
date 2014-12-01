@@ -56,6 +56,7 @@
         nav-ch (chan)
         sync-ch (chan)
         state (atom (-> (state/initial-state)
+                        (assoc :online (connectivity/online?))
                         (assoc :route (routes/default-route))
                         (assoc :notes (storage/load :notes))
                         (assoc :cursor (storage/load :cursor))

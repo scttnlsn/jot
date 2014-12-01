@@ -10,7 +10,9 @@
   (let [ch (chan)
         cb #(put! ch {:online (online?)})]
     (.addEventListener js/window "online" cb)
-    (.addEventListener js/window "offline" #(do (.stop js/window) (cb)))
+    (.addEventListener js/window "offline" #(do
+                                             (.stop js/window)
+                                             (cb)))
     (util/debounce ch 10000)))
 
 (defn connectivity! [{:keys [online]} state]
