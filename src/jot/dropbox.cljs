@@ -30,18 +30,6 @@
   {:has-changes (.-hasChanges result)
    :retry-timeout (* 1000 (.-retryAfter result))})
 
-(defn- parse-write-result [result]
-  {})
-
-(defn- parse-delete-result [result]
-  {})
-
-(defn- parse-authenticate-result [result]
-  {})
-
-(defn- parse-logout-result [result]
-  {})
-
 (defn- wrap-callback [cb f]
   (fn [err result]
     (if err
@@ -69,18 +57,18 @@
 
 (defn write [client path data]
   (util/async-chan
-   #(.writeFile client path data (wrap-callback % parse-write-result))))
+   #(.writeFile client path data (wrap-callback % (constantly {})))))
 
 (defn delete [client path]
   (util/async-chan
-   #(.remove client path (wrap-callback % parse-delete-result))))
+   #(.remove client path (wrap-callback % (constantly {})))))
 
 (defn authenticate [client interactive]
   (util/async-chan
    #(.authenticate client
                    #js {:interactive interactive}
-                   (wrap-callback % parse-authenticate-result))))
+                   (wrap-callback % (constantly {})))))
 
 (defn logout [client]
   (util/async-chan
-   #(.signOut client (wrap-callback % parse-logout-result))))
+   #(.signOut client (wrap-callback % (constantly {})))))
