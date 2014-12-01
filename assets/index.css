@@ -659,6 +659,7 @@ ul.list li .top:hover {
 }
 
 ul.list li .subtext {
+  display: block;
   font-weight: 100;
 }
 
