@@ -80,7 +80,15 @@
     "false" false
     nil))
 
-(def query-string-options
-  {:log? (parse-bool (.getParameterValue parsed-uri "log"))})
+(defn parse-qs [param]
+  (.getParameterValue parsed-uri param))
 
-(def logging-enabled? (:log? query-string-options))
+(def qs-options
+  {:log? (parse-bool (parse-qs "log"))
+   :repl? (parse-bool (parse-qs "repl"))
+   :dev? (parse-bool (parse-qs "dev"))})
+
+(def logging-enabled? (or (:dev? qs-options)
+                          (:log? qs-options)))
+(def repl-enabled? (or (:dev? qs-options)
+                       (:repl? qs-options)))

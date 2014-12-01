@@ -84,4 +84,6 @@
         sync-ch ([value] (sync-handler value state)))))))
 
 (main)
-(ws-repl/connect "ws://localhost:9001" :verbose true)
+
+(if util/repl-enabled?
+  (ws-repl/connect "ws://localhost:9001" :verbose true))
