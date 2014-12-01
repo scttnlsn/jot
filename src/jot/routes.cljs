@@ -1,6 +1,7 @@
 (ns jot.routes
+  (:require-macros [secretary.core :refer [defroute]])
   (:require [cljs.core.async :refer [put!]]
-            [secretary.core :as secretary :include-macros true :refer [defroute]])
+            [secretary.core :as secretary])
   (:import goog.History
            goog.history.EventType))
 

@@ -2,18 +2,18 @@
   :url "https://github.com/scttnlsn/jot"
 
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/clojurescript "0.0-2311"]
-                 [org.clojure/core.async "0.1.338.0-5c5012-alpha"]
+                 [org.clojure/clojurescript "0.0-2371"]
+                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [com.facebook/react "0.11.2"]
-                 [om "0.7.3"]
+                 [om "0.8.0-alpha2"]
                  [kioo "0.4.0"]
-                 [prismatic/om-tools "0.3.2"]
+                 [prismatic/om-tools "0.3.6"]
                  [secretary "1.2.1"]
                  [tailrecursion/cljson "1.0.7"]
                  [com.cemerick/piggieback "0.1.3"]
-                 [weasel "0.4.0-SNAPSHOT"]]
+                 [weasel "0.4.2"]]
 
-  :plugins [[lein-cljsbuild "1.0.4-SNAPSHOT"]]
+  :plugins [[lein-cljsbuild "1.0.3"]]
 
   :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
 
