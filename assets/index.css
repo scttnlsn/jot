@@ -503,6 +503,10 @@ h2 {
   height: 100%;
 }
 
+::-webkit-scrollbar {
+  display: none;
+}
+
 .content {
   background-color: #fff;
   border: none;

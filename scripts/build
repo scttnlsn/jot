@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-lein cljsbuild clean
-lein cljsbuild once prod
-
-now=`date`
-cat resources/cache.manifest | sed "s/TIMESTAMP/${now}/g" > assets/cache.manifest

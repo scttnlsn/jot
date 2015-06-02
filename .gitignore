@@ -4,10 +4,8 @@ pom.xml
 /classes/
 /out/
 /target/
+/build/
 .lein-deps-sum
 .lein-repl-history
 .lein-plugins/
 .nrepl-port
-jot.js
-assets/jot.js
-assets/cache.manifest
