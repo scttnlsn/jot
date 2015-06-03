@@ -30,10 +30,11 @@
       [:i.remove.foundicon-remove {:on-click #(dispatch [:clear-search])}]]]))
 
 (defn tag [i name]
-  [:span.tag {:key i :on-click #(dispatch [:search name])} name])
+  ^{:key i}
+  [:span.tag {:on-click #(dispatch [:search name])} name])
 
-(defn note-list-item [i note]
-  [:li.palette.gray {:key i}
+(defn note-list-item [note]
+  [:li.palette.gray {:key (:id note)}
    [:div.top {:on-click #(routing/visit! (routing/note-edit-path {:id (:id note)}))}
     [:h2.title  (notes/title note)]
     [:span.subtext (notes/summary note)]]
@@ -73,7 +74,7 @@
      [:section.scroll
       [scrollable
        [:ul.list
-        (map-indexed note-list-item @notes)]]]]))
+        (map note-list-item @notes)]]]]))
 
 (defn note-edit [id]
   (let [note (subscribe [:note id])]
@@ -87,7 +88,19 @@
                           :on-change #(dispatch-sync [:update-note id (.. % -target -value)])}]]]))
 
 (defn settings []
-  [:h1 "fixme"])
+  (let [syncing? (subscribe [:syncing?])]
+    [:span.settings
+     [header
+      [button "left-arrow" {:href (routing/note-list-path)}]
+      [:h1 "Settings"]
+      [:a.btn.placeholder]]
+     [:section.scroll
+      [:div.content
+       [:p.status
+        (str "Dropbox syncing is " (if @syncing? "on" "off") ".")]
+       [:br]
+       [:button.btn {:on-click #(dispatch [:toggle-sync])}
+        (if @syncing? "Disconnect" "Connect")]]]]))
 
 ;; pages
 

@@ -6,11 +6,7 @@
             [jot.routing :as routing]))
 
 (enable-console-print!)
-
-;; -- entry point --------------------------------------------------
-
 (dispatch-sync [:initialize])
-
 (routing/start-history!)
 
 (reagent/render-component [components/app]

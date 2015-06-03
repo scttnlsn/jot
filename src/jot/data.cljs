@@ -9,6 +9,7 @@
 (def initial-state {:current-route [:note-list {}]
                     :search-term ""
                     :scroll-position 0
+                    :syncing? false
                     :notes {"1" {:text "Note One\nThis is note one.\n#foo" :timestamp (js/Date.)}
                             "2" {:text "Note Two\nThis is note two.\n#foo #bar" :timestamp (js/Date.)}
                             "3" {:text "Note Three\nThis is note three." :timestamp (js/Date.)}
@@ -51,6 +52,11 @@
  :scroll-position
  (fn [db]
    (reaction (:scroll-position @db))))
+
+(register-sub
+ :syncing?
+ (fn [db]
+   (reaction (:syncing? @db))))
 
 ;; handlers
 
@@ -100,3 +106,8 @@
  :scroll
  (fn [db [_ scroll-position]]
    (assoc db :scroll-position scroll-position)))
+
+(register-handler
+ :toggle-sync
+ (fn [db _]
+   (update db :syncing? not)))
