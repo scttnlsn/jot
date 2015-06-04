@@ -19,6 +19,7 @@
 (defn find-notes [db]
   (->> (:notes db)
        (format-notes)
+       (filter #(not (:deleted? %)))
        (filter #(matches? % (:search-term db)))
        (sort #(compare (:timestamp %2) (:timestamp %1)))))
 
@@ -70,7 +71,7 @@
  :new-note
  (fn [db]
    (let [id (util/make-uuid)
-         note {:text "Untitled" :timestamp (js/Date.)}]
+         note {:text "" :timestamp (js/Date.)}]
      (routing/visit! (routing/note-edit-path {:id id}))
      (assoc-in db [:notes id] note))))
 
@@ -85,14 +86,15 @@
  (fn [db [_ id text]]
    (-> db
        (assoc :scroll-position 0)
-       (assoc-in [:notes id :text] text)
-       (assoc-in [:notes id :timestamp] (js/Date.)))))
+       (update-in [:notes id] #(merge % {:text text
+                                         :timestamp (js/Date.)})))))
 
 (register-handler
  :delete-note
  (fn [db [_ id]]
    (routing/visit! (routing/note-index-path))
-   (assoc db :notes (dissoc (:notes db) id))))
+   (-> db
+       (update-in [:notes id] #(merge % {:deleted? true})))))
 
 (register-handler
  :search

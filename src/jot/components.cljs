@@ -87,7 +87,7 @@
     [:span.editor
      [header
       [button "left-arrow" {:href (routing/note-index-path)}]
-      [:h1 (:title @note)]
+      [:h1 (notes/title note)]
       [button "trash" {:on-click #(dispatch [:delete-note id])}]]
      [:section.scroll
       [:textarea.content {:default-value (:text @note)
