@@ -2,6 +2,22 @@
   (:require-macros [cljs.core.async.macros :refer [go-loop]])
   (:require [cljs.core.async :refer [>! <! alts! chan timeout]]))
 
+(defprotocol IError
+  (-error? [this]))
+
+(extend-type default
+  IError
+  (-error? [this] false))
+
+(extend-protocol IError
+  js/Error
+  (-error? [this] true))
+
+(defn throw-error [x]
+  (if (-error? x)
+    (throw x)
+    x))
+
 (defn debounce [in ms]
   (let [out (chan)]
     (go-loop [last-val nil]

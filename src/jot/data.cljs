@@ -4,6 +4,7 @@
             [re-frame.core :as re-frame :refer [register-handler register-sub]]
             [jot.notes :refer [matches?]]
             [jot.routing :as routing]
+            [jot.sync :as sync]
             [jot.util :as util]))
 
 (def initial-state {:current-route [:note-list {}]
@@ -62,8 +63,8 @@
 
 (register-handler
  :initialize
- (fn [db _]
-   (merge db initial-state)))
+ (fn [db [_ state]]
+   (merge db (or state initial-state))))
 
 (register-handler
  :navigate
@@ -109,5 +110,8 @@
 
 (register-handler
  :toggle-sync
- (fn [db _]
+ (fn [{:keys [syncing?] :as db} _]
+   (if syncing?
+     (sync/disconnect!)
+     (sync/connect!))
    (update db :syncing? not)))

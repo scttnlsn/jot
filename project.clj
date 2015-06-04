@@ -3,6 +3,7 @@
 
   :dependencies [[org.clojure/clojure "1.7.0-RC1"]
                  [org.clojure/clojurescript "0.0-3308"]
+                 [cljsjs/dropbox "0.10.3-0"]
                  [re-frame "0.4.1"]
                  [secretary "1.2.3"]]
 
