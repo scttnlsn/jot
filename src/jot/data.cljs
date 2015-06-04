@@ -7,16 +7,11 @@
             [jot.sync :as sync]
             [jot.util :as util]))
 
-(def initial-state {:current-route [:note-list {}]
+(def initial-state {:current-route (routing/default-route)
                     :search-term ""
                     :scroll-position 0
                     :syncing? false
-                    :notes {"1" {:text "Note One\nThis is note one.\n#foo" :timestamp (js/Date.)}
-                            "2" {:text "Note Two\nThis is note two.\n#foo #bar" :timestamp (js/Date.)}
-                            "3" {:text "Note Three\nThis is note three." :timestamp (js/Date.)}
-                            "4" {:text "Note Four\nThis is note four." :timestamp (js/Date.)}
-                            "5" {:text "Note Five\nThis is note five.\n#bar" :timestamp (js/Date.)}
-                            "6" {:text "Note Six\nThis is note six.\n#baz" :timestamp (js/Date.)}}})
+                    :notes {}})
 
 (defn format-notes [notes]
   (for [[id note] notes] (merge note {:id id})))
@@ -80,6 +75,12 @@
      (assoc-in db [:notes id] note))))
 
 (register-handler
+ :load-note
+ (fn [db [_ {:keys [id] :as note}]]
+   (-> db
+       (assoc-in [:notes id] note))))
+
+(register-handler
  :update-note
  (fn [db [_ id text]]
    (-> db
@@ -90,7 +91,7 @@
 (register-handler
  :delete-note
  (fn [db [_ id]]
-   (routing/visit! (routing/note-list-path))
+   (routing/visit! (routing/note-index-path))
    (assoc db :notes (dissoc (:notes db) id))))
 
 (register-handler

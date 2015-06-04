@@ -3,7 +3,7 @@
                    [jot.macros :refer [<? dochan]])
   (:require [cljs.core.async :refer [<! put!]]
             [reagent.core :as reagent]
-            [re-frame.core :refer [dispatch-sync]]
+            [re-frame.core :refer [dispatch dispatch-sync]]
             [jot.components :as components]
             [jot.data :as data]
             [jot.dropbox :as dropbox]
@@ -25,7 +25,13 @@
     (let [listener (sync/listen nil)]
       (reset! state listener)
       (dochan [result (:results listener)]
-              (println "result:" result)))))
+              (doseq [{:keys [path deleted? timestamp]} (:changes result)]
+                (if deleted?
+                  (println "FIXME handle deleted")
+                  (let [note {:id (subs path 1)
+                              :text (<? (sync/read path))
+                              :timestamp timestamp}]
+                    (dispatch [:load-note note]))))))))
 
 (defn stop []
   (if @state

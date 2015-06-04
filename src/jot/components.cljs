@@ -29,18 +29,19 @@
                :on-change #(dispatch [:search (.. % -target -value)])}]
       [:i.remove.foundicon-remove {:on-click #(dispatch [:clear-search])}]]]))
 
-(defn tag [i name]
-  ^{:key i}
+(defn tag [name]
   [:span.tag {:on-click #(dispatch [:search name])} name])
 
-(defn note-list-item [note]
-  [:li.palette.gray {:key (:id note)}
-   [:div.top {:on-click #(routing/visit! (routing/note-edit-path {:id (:id note)}))}
+(defn note-list-item [{:keys [id] :as note}]
+  [:li.palette.gray
+   [:div.top {:on-click #(routing/visit! (routing/note-edit-path {:id id}))}
     [:h2.title  (notes/title note)]
     [:span.subtext (notes/summary note)]]
    [:div.bottom.highlight
     [:div.tags.left
-     (map-indexed tag (notes/tags note))]
+     (for [name (notes/tags note)]
+       ^{:key name}
+       [tag name])]
     [:span.timestamp (notes/date-string note)]]])
 
 (defn scrollable [child]
@@ -62,9 +63,16 @@
         [:div.wrapper {:on-scroll #(let [scroll-position (.. % -target -scrollTop)]
                                      (put! scroll-ch scroll-position)
                                      scroll-position)}
-         child])})))
+         [child]])})))
 
 (defn note-list []
+  (let [notes (subscribe [:notes])]
+    [:ul.list
+     (for [{:keys [id] :as note} @notes]
+       ^{:key id}
+       [note-list-item note])]))
+
+(defn note-index []
   (let [notes (subscribe [:notes])]
     [:span.list
      [header
@@ -72,15 +80,13 @@
       [search-box]
       [button "plus" {:on-click #(dispatch [:new-note])}]]
      [:section.scroll
-      [scrollable
-       [:ul.list
-        (map note-list-item @notes)]]]]))
+      [scrollable note-list]]]))
 
 (defn note-edit [id]
   (let [note (subscribe [:note id])]
     [:span.editor
      [header
-      [button "left-arrow" {:href (routing/note-list-path)}]
+      [button "left-arrow" {:href (routing/note-index-path)}]
       [:h1 (:title @note)]
       [button "trash" {:on-click #(dispatch [:delete-note id])}]]
      [:section.scroll
@@ -91,7 +97,7 @@
   (let [syncing? (subscribe [:syncing?])]
     [:span.settings
      [header
-      [button "left-arrow" {:href (routing/note-list-path)}]
+      [button "left-arrow" {:href (routing/note-index-path)}]
       [:h1 "Settings"]
       [:a.btn.placeholder]]
      [:section.scroll
@@ -108,9 +114,9 @@
   (fn [name _]
     name))
 
-(defmethod page :note-list
+(defmethod page :note-index
   [_ _]
-  [note-list])
+  [note-index])
 
 (defmethod page :note-edit
   [_ {:keys [id]}]

@@ -23,6 +23,10 @@
   (go-catch
    (<? (last (dropbox/logout client)))))
 
+(defn read [path]
+  (go-catch
+   (<? (last (dropbox/read client path)))))
+
 (defn push! [{:keys [id data deleted?]}]
   (go-catch
    (let [path (str "/" id)]

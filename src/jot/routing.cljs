@@ -27,11 +27,14 @@
 (defn visit! [path]
   (aset js/window.location "hash" path))
 
-(defroute note-list-path "/" {}
-  (dispatch [:navigate [:note-list {}]]))
+(defroute note-index-path "/" {}
+  (dispatch [:navigate [:note-index {}]]))
 
 (defroute note-edit-path "/notes/:id" {id :id}
   (dispatch [:navigate [:note-edit {:id id}]]))
 
 (defroute settings-path "/settings" {}
   (dispatch [:navigate [:settings {}]]))
+
+(defn default-route []
+  [:note-index {}])
