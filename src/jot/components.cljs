@@ -3,6 +3,7 @@
                    [jot.macros :refer [dochan]])
   (:require [cljs.core.async :refer [close! chan put!]]
             [reagent.core :as reagent]
+            [reagent.ratom :as ratom]
             [re-frame.core :refer [dispatch dispatch-sync subscribe]]
             [jot.notes :as notes]
             [jot.routing :as routing]
@@ -83,15 +84,23 @@
       [scrollable note-list]]]))
 
 (defn note-edit [id]
-  (let [note (subscribe [:note id])]
-    [:span.editor
-     [header
-      [button "left-arrow" {:href (routing/note-index-path)}]
-      [:h1 (notes/title note)]
-      [button "trash" {:on-click #(dispatch [:delete-note id])}]]
-     [:section.scroll
-      [:textarea.content {:default-value (:text @note)
-                          :on-change #(dispatch-sync [:update-note id (.. % -target -value)])}]]]))
+  (let [note (subscribe [:note id])
+        text (ratom/atom (:text @note))
+        update-ch (chan)]
+    (go
+      (dochan [text (util/debounce update-ch 1000)]
+              (dispatch [:update-text id text])))
+    (fn [id]
+      [:span.editor
+       [header
+        [button "left-arrow" {:href (routing/note-index-path)}]
+        [:h1 (notes/title {:text @text})]
+        [button "trash" {:on-click #(dispatch [:delete-note id])}]]
+       [:section.scroll
+        [:textarea.content {:default-value @text
+                            :on-change #(let [val (.. % -target -value)]
+                                          (reset! text val)
+                                          (put! update-ch val))}]]])))
 
 (defn settings []
   (let [syncing? (subscribe [:syncing?])]
