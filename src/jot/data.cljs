@@ -13,15 +13,17 @@
                     :syncing? false
                     :notes {}})
 
-(defn format-notes [notes]
-  (for [[id note] notes] (merge note {:id id})))
-
-(defn find-notes [db]
+(defn visible-notes [db]
   (->> (:notes db)
-       (format-notes)
+       (map last)
        (filter #(not (:deleted? %)))
        (filter #(matches? % (:search-term db)))
        (sort #(compare (:timestamp %2) (:timestamp %1)))))
+
+(defn dirty-notes [db]
+  (->> (:notes db)
+       (map last)
+       (filter :dirty?)))
 
 ;; subscriptions
 
@@ -33,7 +35,12 @@
 (register-sub
  :notes
  (fn [db]
-   (reaction (find-notes @db))))
+   (reaction (visible-notes @db))))
+
+(register-sub
+ :dirty-notes
+ (fn [db]
+   (reaction (dirty-notes @db))))
 
 (register-sub
  :note
@@ -71,8 +78,12 @@
  :new-note
  (fn [db]
    (let [id (util/make-uuid)
-         note {:text "" :timestamp (js/Date.)}]
-     (routing/visit! (routing/note-edit-path {:id id}))
+         note {:id id
+               :text ""
+               :timestamp (js/Date.)
+               :dirty? true
+               :volatile? true}]
+     (routing/visit! (routing/note-edit-path note))
      (assoc-in db [:notes id] note))))
 
 (register-handler
@@ -81,20 +92,38 @@
    (-> db
        (assoc-in [:notes id] note))))
 
+(defn- update-note [db id updates]
+  (-> db
+      ))
+
 (register-handler
  :update-note
+ (fn [db [_ id updates]]
+   (-> db
+       (update-in [:notes id] #(merge % updates)))))
+
+(register-handler
+ :update-text
  (fn [db [_ id text]]
    (-> db
        (assoc :scroll-position 0)
        (update-in [:notes id] #(merge % {:text text
-                                         :timestamp (js/Date.)})))))
+                                         :timestamp (js/Date.)
+                                         :dirty? true})))))
 
 (register-handler
  :delete-note
  (fn [db [_ id]]
    (routing/visit! (routing/note-index-path))
    (-> db
-       (update-in [:notes id] #(merge % {:deleted? true})))))
+       (update-in [:notes id] #(merge % {:deleted? true
+                                         :dirty? true})))))
+
+(register-handler
+ :dissoc-note
+ (fn [db [_ id]]
+   (-> db
+       (util/dissoc-in [:notes id]))))
 
 (register-handler
  :search

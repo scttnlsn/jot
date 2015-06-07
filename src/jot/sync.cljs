@@ -1,6 +1,6 @@
 (ns jot.sync
   (:require-macros [cljs.core.async.macros :refer [go]]
-                   [jot.macros :refer [<? go-catch]])
+                   [jot.macros :refer [<? dochan go-catch]])
   (:require [cljs.core.async :refer [<! >! chan close! timeout put!]]
             [re-frame.core :refer [register-handler]]
             [jot.dropbox :as dropbox]
@@ -27,19 +27,50 @@
   (go-catch
    (<? (last (dropbox/read client path)))))
 
-(defn push! [{:keys [id data deleted?]}]
+(defn write! [{:keys [id text]}]
   (go-catch
    (let [path (str "/" id)]
-     (if deleted?
-       (<? (dropbox/delete client path))
-       (<? (dropbox/write client path data))))))
+     (println "(write)" path text)
+     (<? (last (dropbox/write client path text))))))
+
+(defn delete! [{:keys [id]}]
+  (go-catch
+   (let [path (str "/" id)]
+     (println "(delete)" path)
+     (<? (last (dropbox/delete client path))))))
+
+(defn push! [{:keys [deleted? volatile?] :as note}]
+  (println "(push)" note)
+  (go-catch
+   (if deleted?
+     (if volatile?
+       :delete
+       (do
+         (<? (delete! note))
+         :delete))
+     (do
+       (<? (write! note))
+       :update))))
 
 ;; change tracking
 
 (defmulti handle
   (fn [_ [name]] name))
 
-(defn listen [cursor]
+(defn- track-changes [results cb]
+  (go
+    (dochan [result results]
+            (doseq [{:keys [path deleted? timestamp]} (:changes result)]
+              (let [id (subs path 1)]
+                (if deleted?
+                  (cb {:id id
+                       :deleted? true
+                       :timestamp timestamp})
+                  (cb {:id id
+                       :text (<? (read path))
+                       :timestamp timestamp})))))))
+
+(defn listen [cursor cb]
   (let [control (chan)
         results (chan)
         state (atom {:cursor cursor
@@ -47,6 +78,7 @@
                      :results results
                      :control control
                      :listening? true})]
+    (track-changes results cb)
     (go
       (while (:listening? @state)
         (let [args (<! control)]
@@ -56,7 +88,8 @@
       (close! results))
     (put! control [:poll])
     {:results results
-     :control control}))
+     :control control
+     :state state}))
 
 (defn stop-listening [{:keys [control]}]
   (put! control [:abort]))
