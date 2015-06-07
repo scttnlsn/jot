@@ -74,7 +74,7 @@
 
 (defn write [client path data]
   (with-chan
-    #(.readFile client path data (chan->cb %))))
+    #(.writeFile client path data (chan->cb %))))
 
 (defn delete [client path]
   (with-chan
