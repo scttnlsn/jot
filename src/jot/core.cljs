@@ -84,9 +84,10 @@
 (defn push! [{:keys [id deleted? volatile?] :as note}]
   (go-catch
    (when (connectivity/online?)
+     (println "(push)" note)
      (if deleted?
        (if volatile?
-         (dispatch [:dissoc-note id])
+         (dispatch [:dissoc-note note])
          (<? (sync/delete! note)))
        (<? (sync/write! note))))))
 
