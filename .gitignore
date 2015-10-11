@@ -9,3 +9,6 @@ pom.xml
 .lein-repl-history
 .lein-plugins/
 .nrepl-port
+
+assets/jot.js
+assets/cache.manifest

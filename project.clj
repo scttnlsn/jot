@@ -15,4 +15,11 @@
                         :compiler {:output-to "build/dev/jot.js"
                                    :output-dir "build/dev"
                                    :optimizations :none
-                                   :source-map true}}]})
+                                   :source-map true}}
+
+                       {:id "prod"
+                        :source-paths ["src"]
+                        :compiler {:output-to "assets/jot.js"
+                                   :output-dir "build/prod"
+                                   :optimizations :advanced
+                                   :pretty-print false}}]})

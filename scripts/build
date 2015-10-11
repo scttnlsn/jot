@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+rm "assets/cache.manifest"
+rm "assets/jot.js"
+
+lein clean
+lein cljsbuild once prod
+
+now=`date`
+cat resources/cache.manifest | sed "s/TIMESTAMP/${now}/g" > assets/cache.manifest
