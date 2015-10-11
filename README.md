@@ -6,6 +6,13 @@ A mobile web app for your plain text notes.
 * optional Dropbox syncing
 * iOS standalone capable
 
+Built with:
+
+* [ClojureScript](http://clojurescript.com)
+* [React](https://facebook.github.io/react/)
+* [Reagent](http://reagent-project.github.io/)
+* [Re-frame](https://github.com/Day8/re-frame)
+
 Demo: [http://bit.ly/jot-notes](http://bit.ly/jot-notes)
 
 ![](https://dl.dropboxusercontent.com/u/10463543/jot/screenshot.png)
@@ -25,7 +32,7 @@ All production assets will be written to `assets/` and can be served statically.
 
 ## License
 
-Copyright (C) 2014 Scott Nelson
+Copyright (C) 2014-2015 Scott Nelson
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
