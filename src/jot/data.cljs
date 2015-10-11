@@ -91,7 +91,7 @@
                 :timestamp (js/Date.)
                 :dirty? true
                 :volatile? true}]
-      #_(routing/visit! (routing/note-edit-path note))
+      (routing/visit! (routing/note-edit-path note))
       (assoc-in db [:notes id] note))))
 
 (register-handler
