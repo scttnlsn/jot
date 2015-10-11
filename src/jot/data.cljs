@@ -13,15 +13,18 @@
                     :syncing? false
                     :notes {}})
 
+(defn all-notes [db]
+  (:notes db))
+
 (defn visible-notes [db]
-  (->> (:notes db)
+  (->> (all-notes db)
        (map last)
        (filter #(not (:deleted? %)))
        (filter #(matches? % (:search-term db)))
        (sort #(compare (:timestamp %2) (:timestamp %1)))))
 
 (defn dirty-notes [db]
-  (->> (:notes db)
+  (->> (all-notes db)
        (map last)
        (filter :dirty?)))
 
@@ -67,7 +70,12 @@
 (register-handler
   :initialize
   (fn [db [_ state]]
-    (merge db (or state initial-state))))
+    (merge db initial-state (or state {}))))
+
+(register-handler
+  :update-db
+  (fn [db [_ state]]
+    (merge db state)))
 
 (register-handler
   :navigate

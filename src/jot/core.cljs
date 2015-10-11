@@ -11,14 +11,17 @@
             [jot.data :as data]
             [jot.dropbox :as dropbox]
             [jot.routing :as routing]
+            [jot.storage :as storage]
             [jot.sync :as sync]))
 
 (enable-console-print!)
 
-(dispatch-sync [:initialize])
+(dispatch-sync [:initialize {:notes (or (storage/load :notes) {})}])
 (routing/start-history!)
 (reagent/render-component [components/app]
                           (js/document.getElementById "app"))
+
+;; pull
 
 (def listener (atom nil))
 
@@ -30,16 +33,28 @@
                             :text text
                             :timestamp timestamp}])))
 
+(defn cursor-changed? [prev-listener listener]
+  (not= (sync/cursor prev-listener)
+        (sync/cursor listener)))
+
+(defn cursor-watcher [_ _ prev-listener listener]
+  (if (cursor-changed? prev-listener listener)
+    (let [cursor (sync/cursor listener)]
+      (println "(cursor)" cursor)
+      (storage/save! :cursor cursor))))
+
 (defn start-syncing []
-  (reset! listener (sync/listen nil on-change)))
+  (reset! listener (sync/listen (storage/load :cursor) on-change))
+  (add-watch (:state @listener) :cursor-watcher cursor-watcher))
 
 (defn stop-syncing []
   (if @listener
+    (remove-watch (:state @listener) :cursor-watcher)
     (sync/stop-listening @listener)))
 
 (go
   (when (<? (sync/restore!))
-    (dispatch-sync [:initialize {:syncing? true}])
+    (dispatch-sync [:update-db {:syncing? true}])
     (start-syncing)))
 
 ;; push
@@ -47,11 +62,12 @@
 (def push-ch (chan))
 
 (defn notes-changed? [prev-db db]
-  (let [[a b _] (diff (:notes prev-db) (:notes db))]
-    (not= a b)))
+  (not= (data/all-notes prev-db)
+        (data/all-notes db)))
 
-(defn dirty-watcher [_ _ prev-db db]
-  (if (notes-changed? prev-db db)
+(defn notes-watcher [_ _ prev-db db]
+  (when (notes-changed? prev-db db)
+    (storage/save! :notes (data/all-notes db))
     (doseq [note (data/dirty-notes db)]
       (println "(dirty)" note)
       (put! push-ch note))))
@@ -64,7 +80,7 @@
        (<? (sync/delete! note)))
      (<? (sync/write! note)))))
 
-(add-watch app-db :dirty-watcher dirty-watcher)
+(add-watch app-db :notes-watcher notes-watcher)
 
 (go
   (dochan [note push-ch]

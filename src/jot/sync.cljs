@@ -44,20 +44,20 @@
 (defmulti handle
   (fn [_ [name]] name))
 
-(defn- track-changes [results cb]
+(defn- track-changes [results on-change]
   (go
     (dochan [result results]
-            (doseq [{:keys [path deleted? timestamp]} (:changes result)]
-              (let [id (subs path 1)]
-                (if deleted?
-                  (cb {:id id
-                       :deleted? true
-                       :timestamp timestamp})
-                  (cb {:id id
-                       :text (<? (read path))
-                       :timestamp timestamp})))))))
+      (doseq [{:keys [path deleted? timestamp]} (:changes result)]
+        (let [id (subs path 1)]
+          (if deleted?
+            (on-change {:id id
+                        :deleted? true
+                        :timestamp timestamp})
+            (on-change {:id id
+                        :text (<? (read path))
+                        :timestamp timestamp})))))))
 
-(defn listen [cursor cb]
+(defn listen [cursor on-change]
   (let [control (chan)
         results (chan)
         state (atom {:cursor cursor
@@ -65,7 +65,7 @@
                      :results results
                      :control control
                      :listening? true})]
-    (track-changes results cb)
+    (track-changes results on-change)
     (go
       (while (:listening? @state)
         (let [args (<! control)]
@@ -80,6 +80,9 @@
 
 (defn stop-listening [{:keys [control]}]
   (put! control [:abort]))
+
+(defn cursor [{:keys [cursor] :as listener}]
+  cursor)
 
 ;; state transition handlers
 
