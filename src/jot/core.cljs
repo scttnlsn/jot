@@ -3,11 +3,12 @@
                    [reagent.ratom :refer [run!]]
                    [jot.macros :refer [<? dochan go-catch]])
   (:require [clojure.data :refer [diff]]
-            [cljs.core.async :refer [<! chan put!]]
+            [cljs.core.async :refer [<! chan put! timeout]]
             [reagent.core :as reagent]
             [re-frame.core :refer [dispatch dispatch-sync subscribe]]
             [re-frame.db :refer [app-db]]
             [jot.components :as components]
+            [jot.connectivity :as connectivity]
             [jot.data :as data]
             [jot.dropbox :as dropbox]
             [jot.routing :as routing]
@@ -44,18 +45,20 @@
       (storage/save! :cursor cursor))))
 
 (defn start-syncing []
-  (reset! listener (sync/listen (storage/load :cursor) on-change))
-  (add-watch (:state @listener) :cursor-watcher cursor-watcher))
+  (go
+    (when (<? (sync/restore!))
+      (dispatch-sync [:update-db {:syncing? true}])
+      (when-not @listener
+        (println "(sync)" :start)
+        (reset! listener (sync/listen (storage/load :cursor) on-change))
+        (add-watch (:state @listener) :cursor-watcher cursor-watcher)))))
 
 (defn stop-syncing []
-  (if @listener
+  (when @listener
+    (println "(sync)" :stop)
     (remove-watch (:state @listener) :cursor-watcher)
-    (sync/stop-listening @listener)))
-
-(go
-  (when (<? (sync/restore!))
-    (dispatch-sync [:update-db {:syncing? true}])
-    (start-syncing)))
+    (sync/stop-listening @listener)
+    (reset! listener nil)))
 
 ;; push
 
@@ -65,23 +68,44 @@
   (not= (data/all-notes prev-db)
         (data/all-notes db)))
 
+(defn push-dirty-notes!
+  ([]
+   (push-dirty-notes! @app-db))
+  ([db]
+   (doseq [note (data/dirty-notes db)]
+     (println "(dirty)" note)
+     (put! push-ch note))))
+
 (defn notes-watcher [_ _ prev-db db]
   (when (notes-changed? prev-db db)
     (storage/save! :notes (data/all-notes db))
-    (doseq [note (data/dirty-notes db)]
-      (println "(dirty)" note)
-      (put! push-ch note))))
+    (push-dirty-notes! db)))
 
 (defn push! [{:keys [id deleted? volatile?] :as note}]
   (go-catch
-   (if deleted?
-     (if volatile?
-       (dispatch [:dissoc-note id])
-       (<? (sync/delete! note)))
-     (<? (sync/write! note)))))
+   (when (connectivity/online?)
+     (if deleted?
+       (if volatile?
+         (dispatch [:dissoc-note id])
+         (<? (sync/delete! note)))
+       (<? (sync/write! note))))))
 
 (add-watch app-db :notes-watcher notes-watcher)
 
 (go
   (dochan [note push-ch]
     (<? (push! note))))
+
+;; connectivity
+
+(go
+  (let [ch (connectivity/channel)]
+    (dochan [{:keys [online?]} ch]
+      (println "(online)" online?)
+      (if online?
+        (do
+          (start-syncing)
+          (go
+            (<! (timeout 1000))
+            (push-dirty-notes!)))
+        (stop-syncing)))))
