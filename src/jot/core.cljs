@@ -1,9 +1,9 @@
 (ns jot.core
   (:require-macros [cljs.core.async.macros :refer [go]]
-                   [reagent.ratom :refer [run!]]
                    [jot.macros :refer [<? dochan go-catch]])
   (:require [clojure.data :refer [diff]]
             [cljs.core.async :refer [<! chan put! timeout]]
+            [cljsjs.fastclick :as fastclick]
             [reagent.core :as reagent]
             [re-frame.core :refer [dispatch dispatch-sync subscribe]]
             [re-frame.db :refer [app-db]]
@@ -16,6 +16,7 @@
             [jot.sync :as sync]))
 
 (enable-console-print!)
+(js/FastClick.attach (.. js/document -body))
 
 (dispatch-sync [:initialize {:notes (or (storage/load :notes) {})}])
 (routing/start-history!)
