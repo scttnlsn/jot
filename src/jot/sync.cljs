@@ -39,19 +39,6 @@
      (println "(delete)" path)
      (<? (last (dropbox/delete client path))))))
 
-(defn push! [{:keys [deleted? volatile?] :as note}]
-  (println "(push)" note)
-  (go-catch
-   (if deleted?
-     (if volatile?
-       :delete
-       (do
-         (<? (delete! note))
-         :delete))
-     (do
-       (<? (write! note))
-       :update))))
-
 ;; change tracking
 
 (defmulti handle

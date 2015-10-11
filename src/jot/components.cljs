@@ -89,7 +89,7 @@
         update-ch (chan)]
     (go
       (dochan [text (util/debounce update-ch 1000)]
-              (dispatch [:update-text id text])))
+        (dispatch [:update-text id text])))
     (fn [id]
       [:span.editor
        [header

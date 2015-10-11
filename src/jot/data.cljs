@@ -28,122 +28,118 @@
 ;; subscriptions
 
 (register-sub
- :current-route
- (fn [db]
-   (reaction (:current-route @db))))
+  :current-route
+  (fn [db]
+    (reaction (:current-route @db))))
 
 (register-sub
- :notes
- (fn [db]
-   (reaction (visible-notes @db))))
+  :notes
+  (fn [db]
+    (reaction (visible-notes @db))))
 
 (register-sub
- :dirty-notes
- (fn [db]
-   (reaction (dirty-notes @db))))
+  :dirty-notes
+  (fn [db]
+    (reaction (dirty-notes @db))))
 
 (register-sub
- :note
- (fn [db [_ id]]
-   (reaction (get-in @db [:notes id]))))
+  :note
+  (fn [db [_ id]]
+    (reaction (get-in @db [:notes id]))))
 
 (register-sub
- :search-term
- (fn [db]
-   (reaction (get-in @db [:search-term]))))
+  :search-term
+  (fn [db]
+    (reaction (get-in @db [:search-term]))))
 
 (register-sub
- :scroll-position
- (fn [db]
-   (reaction (:scroll-position @db))))
+  :scroll-position
+  (fn [db]
+    (reaction (:scroll-position @db))))
 
 (register-sub
- :syncing?
- (fn [db]
-   (reaction (:syncing? @db))))
+  :syncing?
+  (fn [db]
+    (reaction (:syncing? @db))))
 
 ;; handlers
 
 (register-handler
- :initialize
- (fn [db [_ state]]
-   (merge db (or state initial-state))))
+  :initialize
+  (fn [db [_ state]]
+    (merge db (or state initial-state))))
 
 (register-handler
- :navigate
- (fn [db [_ route]]
-   (assoc db :current-route route)))
+  :navigate
+  (fn [db [_ route]]
+    (assoc db :current-route route)))
 
 (register-handler
- :new-note
- (fn [db]
-   (let [id (util/make-uuid)
-         note {:id id
-               :text ""
-               :timestamp (js/Date.)
-               :dirty? true
-               :volatile? true}]
-     (routing/visit! (routing/note-edit-path note))
-     (assoc-in db [:notes id] note))))
+  :new-note
+  (fn [db]
+    (let [id (util/make-uuid)
+          note {:id id
+                :text ""
+                :timestamp (js/Date.)
+                :dirty? true
+                :volatile? true}]
+      #_(routing/visit! (routing/note-edit-path note))
+      (assoc-in db [:notes id] note))))
 
 (register-handler
- :load-note
- (fn [db [_ {:keys [id] :as note}]]
-   (-> db
-       (assoc-in [:notes id] note))))
-
-(defn- update-note [db id updates]
-  (-> db
-      ))
+  :update-note
+  (fn [db [_ id updates]]
+    (-> db
+        (update-in [:notes id] #(merge % updates)))))
 
 (register-handler
- :update-note
- (fn [db [_ id updates]]
-   (-> db
-       (update-in [:notes id] #(merge % updates)))))
+  :update-text
+  (fn [db [_ id text]]
+    (-> db
+        (assoc :scroll-position 0)
+        (update-in [:notes id] #(merge % {:text text
+                                          :timestamp (js/Date.)
+                                          :dirty? true})))))
 
 (register-handler
- :update-text
- (fn [db [_ id text]]
-   (-> db
-       (assoc :scroll-position 0)
-       (update-in [:notes id] #(merge % {:text text
-                                         :timestamp (js/Date.)
-                                         :dirty? true})))))
+  :delete-note
+  (fn [db [_ id]]
+    (routing/visit! (routing/note-index-path))
+    (-> db
+        (update-in [:notes id] #(merge % {:deleted? true
+                                          :dirty? true})))))
 
 (register-handler
- :delete-note
- (fn [db [_ id]]
-   (routing/visit! (routing/note-index-path))
-   (-> db
-       (update-in [:notes id] #(merge % {:deleted? true
-                                         :dirty? true})))))
+  :search
+  (fn [db [_ search-term]]
+    (assoc db :search-term search-term)))
 
 (register-handler
- :dissoc-note
- (fn [db [_ id]]
-   (-> db
-       (util/dissoc-in [:notes id]))))
+  :clear-search
+  (fn [db _]
+    (assoc db :search-term "")))
 
 (register-handler
- :search
- (fn [db [_ search-term]]
-   (assoc db :search-term search-term)))
+  :scroll
+  (fn [db [_ scroll-position]]
+    (assoc db :scroll-position scroll-position)))
 
 (register-handler
- :clear-search
- (fn [db _]
-   (assoc db :search-term "")))
+  :toggle-sync
+  (fn [{:keys [syncing?] :as db} _]
+    (if syncing?
+      (sync/disconnect!)
+      (sync/connect!))
+    (update db :syncing? not)))
 
 (register-handler
- :scroll
- (fn [db [_ scroll-position]]
-   (assoc db :scroll-position scroll-position)))
+  :assoc-note
+  (fn [db [_ {:keys [id] :as note}]]
+    (-> db
+        (assoc-in [:notes id] note))))
 
 (register-handler
- :toggle-sync
- (fn [{:keys [syncing?] :as db} _]
-   (if syncing?
-     (sync/disconnect!)
-     (sync/connect!))
-   (update db :syncing? not)))
+  :dissoc-note
+  (fn [db [_ {:keys [id] :as note}]]
+    (-> db
+        (util/dissoc-in [:notes id]))))
