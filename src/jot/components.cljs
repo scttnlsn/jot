@@ -52,7 +52,7 @@
       (fn [this]
         (go
           (dochan [scroll-position (debounce scroll-ch 100)]
-                  (dispatch [:scroll scroll-position]))))
+            (dispatch [:scroll scroll-position]))))
 
       :component-did-mount
       (fn [this]
@@ -74,24 +74,25 @@
        [note-list-item note])]))
 
 (defn note-index []
-  (let [notes (subscribe [:notes])]
-    [:span.list
-     [header
-      [button "settings" {:href (routing/settings-path)}]
-      [search-box]
-      [button "plus" {:on-click #(dispatch [:new-note])}]]
-     [:section.scroll
-      [scrollable note-list]]]))
+  [:div.index
+   [header
+    [button "settings" {:href (routing/settings-path)}]
+    [search-box]
+    [button "plus" {:on-click #(dispatch [:new-note])}]]
+   [:section.scroll
+    [scrollable note-list]]])
+
+(def update-ch (chan))
+
+(go
+  (dochan [[id text] (util/debounce update-ch 1000)]
+    (dispatch [:update-text id text])))
 
 (defn note-edit [id]
   (let [note (subscribe [:note id])
-        text (ratom/atom (:text @note))
-        update-ch (chan)]
-    (go
-      (dochan [text (util/debounce update-ch 1000)]
-        (dispatch [:update-text id text])))
+        text (ratom/atom (:text @note))]
     (fn [id]
-      [:span.editor
+      [:div.edit
        [header
         [button "left-arrow" {:href (routing/note-index-path)}]
         [:h1 (notes/title {:text @text})]
@@ -100,7 +101,7 @@
         [:textarea.content {:default-value @text
                             :on-change #(let [val (.. % -target -value)]
                                           (reset! text val)
-                                          (put! update-ch val))}]]])))
+                                          (put! update-ch [id val]))}]]])))
 
 (defn settings []
   (let [syncing? (subscribe [:syncing?])]
@@ -125,15 +126,23 @@
 
 (defmethod page :note-index
   [_ _]
-  [note-index])
+  [:div
+   [note-index]
+   [:div.edit.empty
+    [:header]]])
 
 (defmethod page :note-edit
   [_ {:keys [id]}]
-  [note-edit id])
+  [:div
+   [note-index]
+   ^{:key id}
+   [note-edit id]])
 
 (defmethod page :settings
   [_ _]
-  [settings])
+  [:div
+   [note-index]
+   [settings]])
 
 ;; main component
 

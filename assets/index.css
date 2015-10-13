@@ -471,20 +471,112 @@ h2 {
 
 #app {
   background-color: #eceef1;
-  height: 100%;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
   position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.index {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  max-width: 768px;
+  min-width: 320px;
   width: 100%;
 }
 
-.left {
+@media (min-width: 768px) {
+  .index {
+    width: 320px;
+  }
+}
+
+.edit, .settings {
+  border-left: 1px solid #eceef1;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 320px;
+}
+
+.edit.empty {
+  background: white;
+}
+
+@media (max-width: 768px) {
+  .edit, .settings {
+    left: 0;
+  }
+
+  .edit.empty {
+    display: none;
+  }
+}
+
+/* Header */
+
+header {
+  background-color: #fff;
+  border-bottom: 1px solid #eceef1;
+  height: 50px;
+  line-height: 50px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  text-align: center;
+}
+
+header .menu > * {
+  display: inline-block;
+  position: relative;
+}
+
+header .menu .left {
   float: left;
 }
 
-.right {
+header .menu .right {
   float: right;
 }
+
+header .search input {
+  border: 1px solid #eceef1;
+  border-radius: 20px;
+  font-size: 100%;
+  margin-top: 8px;
+  outline: none;
+  padding: 5px 10px;
+  width: 100%;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+}
+
+header .search .clearable i {
+  color: #cbd0d5;
+  position: absolute;
+  display: block;
+  top: 0;
+  right: 10px;
+  bottom: 0;
+}
+
+header h1 {
+  max-width: 60%;
+  text-overflow: ellipsis;
+  display: inline-block;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Scrolling */
 
 .scroll {
   position: absolute;
@@ -525,57 +617,6 @@ h2 {
 
 .content:focus {
   outline: none;
-}
-
-/* Header */
-
-header {
-  background-color: #fff;
-  height: 50px;
-}
-
-header .menu {
-  line-height: 50px;
-  height: 100%;
-  width: 100%;
-  text-align: center;
-}
-
-header .menu > * {
-  display: inline-block;
-  position: relative;
-}
-
-header .search input {
-  border: 1px solid #eceef1;
-  border-radius: 20px;
-  font-size: 100%;
-  margin-top: 8px;
-  outline: none;
-  padding: 5px 10px;
-  width: 100%;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
-  -webkit-appearance: none;
-}
-
-header .search .clearable i {
-  color: #cbd0d5;
-  position: absolute;
-  display: block;
-  top: 0;
-  right: 10px;
-  bottom: 0;
-}
-
-header h1 {
-  max-width: 60%;
-  text-overflow: ellipsis;
-  display: inline-block;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow: hidden;
 }
 
 /* Buttons */
