@@ -2,7 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [jot.macros :refer [<? dochan go-catch]])
   (:require [clojure.data :refer [diff]]
-            [cljs.core.async :refer [<! chan put! timeout]]
+            [cljs.core.async :as async :refer [<! chan put! timeout]]
             [cljsjs.fastclick :as fastclick]
             [reagent.core :as reagent]
             [re-frame.core :refer [dispatch dispatch-sync subscribe]]
@@ -13,7 +13,8 @@
             [jot.dropbox :as dropbox]
             [jot.routing :as routing]
             [jot.storage :as storage]
-            [jot.sync :as sync]))
+            [jot.sync :as sync]
+            [jot.util :as util]))
 
 (enable-console-print!)
 (js/FastClick.attach (.. js/document -body))
@@ -65,10 +66,6 @@
 
 (def push-ch (chan))
 
-(defn notes-changed? [prev-db db]
-  (not= (data/all-notes prev-db)
-        (data/all-notes db)))
-
 (defn push-dirty-notes!
   ([]
    (push-dirty-notes! @app-db))
@@ -76,11 +73,6 @@
    (doseq [note (data/dirty-notes db)]
      (println "(dirty)" note)
      (put! push-ch note))))
-
-(defn notes-watcher [_ _ prev-db db]
-  (when (notes-changed? prev-db db)
-    (storage/save! :notes (data/all-notes db))
-    (push-dirty-notes! db)))
 
 (defn push! [{:keys [id deleted? volatile?] :as note}]
   (go-catch
@@ -92,7 +84,20 @@
          (<? (sync/delete! note)))
        (<? (sync/write! note))))))
 
-(add-watch app-db :notes-watcher notes-watcher)
+(defn notes-changed? [prev-db db]
+  (not= (data/all-notes prev-db)
+        (data/all-notes db)))
+
+(def notes-changes
+  (-> (util/watch-chan app-db)
+      (async/pipe (async/chan 1 (comp (filter #(apply notes-changed? %))
+                                      (map last))))
+      (util/debounce 1000)))
+
+(go
+  (dochan [db notes-changes]
+    (storage/save! :notes (data/all-notes db))
+    (push-dirty-notes! db)))
 
 (go
   (dochan [note push-ch]

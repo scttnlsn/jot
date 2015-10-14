@@ -82,12 +82,6 @@
    [:section.scroll
     [scrollable note-list]]])
 
-(def update-ch (chan))
-
-(go
-  (dochan [[id text] (util/debounce update-ch 1000)]
-    (dispatch [:update-text id text])))
-
 (defn note-edit [id]
   (let [note (subscribe [:note id])
         text (ratom/atom (:text @note))]
@@ -101,7 +95,7 @@
         [:textarea.content {:default-value @text
                             :on-change #(let [val (.. % -target -value)]
                                           (reset! text val)
-                                          (put! update-ch [id val]))}]]])))
+                                          (dispatch [:update-text id val]))}]]])))
 
 (defn settings []
   (let [syncing? (subscribe [:syncing?])]

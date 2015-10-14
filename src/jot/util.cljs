@@ -1,6 +1,6 @@
 (ns jot.util
   (:require-macros [cljs.core.async.macros :refer [go-loop]])
-  (:require [cljs.core.async :refer [>! <! alts! chan timeout]]))
+  (:require [cljs.core.async :refer [>! <! alts! chan put! timeout]]))
 
 (defprotocol IError
   (-error? [this]))
@@ -28,6 +28,13 @@
           timer (do (>! out val) (recur nil))
           in (recur new-val))))
     out))
+
+(defn watch-chan [atom]
+  (let [ch (chan)]
+    (add-watch atom (gensym)
+               (fn [_ _ prev current]
+                 (put! ch [prev current])))
+    ch))
 
 (defn make-uuid []
   (let [r (repeatedly 30 (fn [] (.toString (rand-int 16) 16)))]
