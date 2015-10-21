@@ -24,6 +24,9 @@ Development:
     $ lein figwheel
 
 Open `index.html` in your browser.
+If you intend to authenticate with Dropbox, the static assets must be served locally on port 3000:
+
+    $ python -m SimpleHTTPServer 3000
 
 Production:
 
