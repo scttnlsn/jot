@@ -96,7 +96,7 @@
   (reagent/render-component [components/app]
                             (js/document.getElementById "app")))
 
-(defn main []
+(defn ^:export main []
   (dispatch-sync [:initialize {:notes (or (storage/load :notes) {})}])
   (routing/start-history!)
   (render)
