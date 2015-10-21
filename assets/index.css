@@ -450,6 +450,14 @@ body *:not(input, textarea) {
   -webkit-tap-highlight-color: transparent;
 }
 
+.left {
+  float: left;
+}
+
+.right {
+  float: right;
+}
+
 /* Type */
 
 p {
@@ -534,14 +542,6 @@ header {
 header .menu > * {
   display: inline-block;
   position: relative;
-}
-
-header .menu .left {
-  float: left;
-}
-
-header .menu .right {
-  float: right;
 }
 
 header .search input {
