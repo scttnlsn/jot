@@ -21,8 +21,9 @@ Demo: [http://bit.ly/jot-notes](http://bit.ly/jot-notes)
 
 Development:
 
-    $ lein cljsbuild auto dev
-    $ python -m SimpleHTTPServer 3000
+    $ lein figwheel
+
+Open `index.html` in your browser.
 
 Production:
 

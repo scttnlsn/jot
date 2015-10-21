@@ -9,6 +9,7 @@ pom.xml
 .lein-repl-history
 .lein-plugins/
 .nrepl-port
+figwheel_server.log
 
 assets/jot.js
 assets/cache.manifest

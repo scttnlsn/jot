@@ -1,3 +1,4 @@
+
 (ns jot.core
   (:require-macros [cljs.core.async.macros :refer [go]]
                    [jot.macros :refer [<? dochan go-catch]])
@@ -19,14 +20,9 @@
 (enable-console-print!)
 (js/FastClick.attach (.. js/document -body))
 
-(dispatch-sync [:initialize {:notes (or (storage/load :notes) {})}])
-(routing/start-history!)
-(reagent/render-component [components/app]
-                          (js/document.getElementById "app"))
-
 ;; pull
 
-(def listener (atom nil))
+(defonce listener (atom nil))
 
 (defn on-change [{:keys [id deleted? text timestamp] :as note}]
   (println "(on-change)" note)
@@ -64,7 +60,7 @@
 
 ;; push
 
-(def push-ch (chan))
+(defonce push-ch (chan))
 
 (defn push-dirty-notes!
   ([]
@@ -88,31 +84,40 @@
   (not= (data/all-notes prev-db)
         (data/all-notes db)))
 
-(def notes-changes
+(defonce notes-changes
   (-> (util/watch-chan app-db)
       (async/pipe (async/chan 1 (comp (filter #(apply notes-changed? %))
                                       (map last))))
       (util/debounce 1000)))
 
-(go
-  (dochan [db notes-changes]
-    (storage/save! :notes (data/all-notes db))
-    (push-dirty-notes! db)))
+;; main
 
-(go
-  (dochan [note push-ch]
-    (<? (push! note))))
+(defn render []
+  (reagent/render-component [components/app]
+                            (js/document.getElementById "app")))
 
-;; connectivity
+(defn main []
+  (dispatch-sync [:initialize {:notes (or (storage/load :notes) {})}])
+  (routing/start-history!)
+  (render)
 
-(go
-  (let [ch (connectivity/channel)]
-    (dochan [{:keys [online?]} ch]
-      (println "(online)" online?)
-      (if online?
-        (do
-          (start-syncing)
-          (go
-            (<! (timeout 1000))
-            (push-dirty-notes!)))
-        (stop-syncing)))))
+  (go
+    (dochan [db notes-changes]
+      (storage/save! :notes (data/all-notes db))
+      (push-dirty-notes! db)))
+
+  (go
+    (dochan [note push-ch]
+      (<? (push! note))))
+
+  (go
+    (let [ch (connectivity/channel)]
+      (dochan [{:keys [online?]} ch]
+        (println "(online)" online?)
+        (if online?
+          (do
+            (start-syncing)
+            (go
+              (<! (timeout 1000))
+              (push-dirty-notes!)))
+          (stop-syncing))))))
