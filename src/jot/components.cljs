@@ -27,8 +27,8 @@
       [:input {:type "text"
                :placeholder "Search..."
                :value @search-term
-               :on-change #(dispatch [:search (.. % -target -value)])}]
-      [:i.remove.foundicon-remove {:on-click #(dispatch [:clear-search])}]]]))
+               :on-change #(dispatch-sync [:search (.. % -target -value)])}]
+      [:i.remove.foundicon-remove {:on-click #(dispatch-sync [:clear-search])}]]]))
 
 (defn tag [name]
   [:span.tag {:on-click #(dispatch [:search name])} name])
